@@ -1,20 +1,20 @@
 {
-  "name": "node-project",
-  "version": "1.0.0",
-  "description": "Empty node project",
+  "name": "articles-recommander",
+  "version": "0.0.0",
+  "description": "Articles recommander platform",
   "scripts": {
     "test": "make tests"
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://github.com/petitchevalroux/node-project.git"
+    "url": "git+ssh://github.com/petitchevalroux/articles-recommander.git"
   },
   "author": "Patrick Poulain",
   "license": "GPL-3.0",
   "bugs": {
-    "url": "https://github.com/petitchevalroux/node-project/issues"
+    "url": "https://github.com/petitchevalroux/articles-recommander/issues"
   },
-  "homepage": "https://github.com/petitchevalroux/node-project#readme",
+  "homepage": "https://github.com/petitchevalroux/articles-recommander#readme",
   "devDependencies": {
     "eslint": "^3.3.1",
     "eslint-plugin-promise": "^2.0.1",
@@ -22,5 +22,13 @@
     "js-beautify": "^1.6.3",
     "mocha": "^3.0.2",
     "sinon": "^1.17.5"
+  },
+  "dependencies": {
+    "@petitchevalroux/error": "^1.0.1",
+    "@petitchevalroux/opengraph-fetcher": "^0.0.2",
+    "@petitchevalroux/sitemap-parser": "^0.0.1",
+    "jsonapi-client": "github:holidayextras/jsonapi-client",
+    "nconf": "^0.8.4",
+    "winston": "^2.3.0"
   }
 }
