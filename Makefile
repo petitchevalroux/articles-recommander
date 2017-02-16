@@ -80,3 +80,17 @@ coverage/lcov-report/index.html: coverage
 	test ! -f coverage/lcov.info || $(ISTANBUL) check
 	touch $@
 
+.PHONY: compile
+compile: .build/compile
+
+.build/compile: .build/front
+	touch $@
+
+.build/front: .build/front-javascript
+	touch $@
+
+.build/front-javascript: package.json static/widget/js/main.js
+	touch $@
+
+static/widget/js/main.js: node_modules/dot/doT.js src/front/widget/widget.js
+	cat $^ > $@
