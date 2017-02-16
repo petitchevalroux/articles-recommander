@@ -8,7 +8,9 @@ try {
 
     // Define static path
     app.staticPath = path.join(__dirname, "..", "..", "static", "widget");
-    app.use(express.static(app.staticPath));
+    app.use(express.static(app.staticPath, {
+        "etag": false
+    }));
     di.log.info("static path: %s", app.staticPath);
 
     // Define path allowing to test default error handler
