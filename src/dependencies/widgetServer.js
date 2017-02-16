@@ -4,9 +4,32 @@ var di = require(path.join(__dirname, "..", "di"));
 var express = require("express");
 var app = express();
 try {
+    di.log.info("environment: %s", di.environment);
+
+    // Define static path
     app.staticPath = path.join(__dirname, "..", "..", "static", "widget");
     app.use(express.static(app.staticPath));
     di.log.info("static path: %s", app.staticPath);
+
+    // Define path allowing to test default error handler
+    if (di.environment !== "production") {
+        app.get("/error", function() {
+            throw new di.Error("sample error");
+        });
+    }
+    // Default error handler
+    app.use(function(err, req, res, next) {
+        if (res.headersSent) {
+            return next(err);
+        }
+        if (!err) {
+            err = new di.Error("request not handled");
+        }
+        di.log.error(new di.Error("internal server error", err));
+        res.status(500);
+        res.send("Internal server error");
+    });
+
     app.start = function() {
         di.log.info("starting");
         try {
