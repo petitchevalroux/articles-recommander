@@ -89,8 +89,11 @@ compile: .build/compile
 .build/front: .build/front-javascript
 	touch $@
 
-.build/front-javascript: package.json static/widget/js/main.js
+.build/front-javascript: package.json static/widget/js static/widget/js/main.js
 	touch $@
+
+static/widget/js:
+	mkdir -p $@
 
 static/widget/js/main.js: node_modules/dot/doT.js src/front/widget/widget.js
 	cat $^ > $@
