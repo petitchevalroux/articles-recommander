@@ -19,6 +19,16 @@ try {
             throw new di.Error("sample error");
         });
     }
+
+    app.controllersPath = path.join(__dirname, "..", "widget", "back",
+        "controllers");
+
+    var recommendationsController = require(
+        path.join(app.controllersPath,
+            "recommendations")
+    );
+    app.get("/recommendations.js", recommendationsController.getJs);
+
     // Default error handler
     app.use(function(err, req, res, next) {
         if (res.headersSent) {

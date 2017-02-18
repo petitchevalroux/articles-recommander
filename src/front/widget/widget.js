@@ -24,7 +24,9 @@
             );
             document.head.appendChild(script);
         },
-        "loadRecommendations": function() {},
+        "loadRecommendations": function(recommendations) {
+            console.log(recommendations);
+        },
         "getRecommendationsUrl": function(to, count) {
             return "/recommendations.js?" +
                 "to=" + encodeURIComponent(to) +
