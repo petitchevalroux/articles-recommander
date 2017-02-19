@@ -95,5 +95,5 @@ compile: .build/compile
 static/widget/js:
 	mkdir -p $@
 
-static/widget/js/main.js: node_modules/dot/doT.js src/front/widget/widget.js
+static/widget/js/main.js: node_modules/dot/doT.js src/widget/front/widget.js
 	cat $^ > $@
