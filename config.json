@@ -1,3 +1,4 @@
 {
-    "widgetServer": {"port":3001}
+    "widgetServer": {"port":3001},
+    "redis":{"url":"redis://127.0.0.1:6379","prefix":"artrec:"}
 }
