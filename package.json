@@ -27,6 +27,9 @@
     "@petitchevalroux/error": "^1.0.1",
     "@petitchevalroux/opengraph-fetcher": "^0.0.2",
     "@petitchevalroux/sitemap-parser": "^0.0.1",
+    "browserify": "^14.1.0",
+    "dot": "^1.1.1",
+    "express": "^4.14.1",
     "jsonapi-client": "github:holidayextras/jsonapi-client",
     "nconf": "^0.8.4",
     "winston": "^2.3.0"
