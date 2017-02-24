@@ -95,5 +95,9 @@ compile: .build/compile
 static/widget/js:
 	mkdir -p $@
 
-static/widget/js/main.js: node_modules/dot/doT.js src/widget/front/widget.js
-	cat $^ > $@
+BROWSERIFY=node_modules/.bin/browserify
+
+$(BROWSERIFY): .build/install
+
+static/widget/js/main.js: $(BROWSERIFY) node_modules/dot/doT.js src/widget/front/widget.js src/widget/front/recommendations-library.js
+	$(BROWSERIFY) src/widget/front/widget.js -o $@
