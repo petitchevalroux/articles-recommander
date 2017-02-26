@@ -23,7 +23,7 @@ try {
     app.controllersPath = path.join(__dirname, "..", "widget", "back",
         "controllers");
 
-    app.get("/recommendations.js", function (req, res, next) {
+    app.get("/recommendations.js", function(req, res, next) {
         var recommendationsController = require(
             path.join(
                 app.controllersPath,
@@ -31,6 +31,16 @@ try {
             )
         );
         recommendationsController.getJs(req, res, next);
+    });
+
+    app.get("/redirect", function(req, res, next) {
+        var redirectController = require(
+            path.join(
+                app.controllersPath,
+                "redirect"
+            )
+        );
+        redirectController.getJs(req, res, next);
     });
 
     // Default error handler
@@ -50,7 +60,7 @@ try {
         di.log.info("starting");
         try {
             var config = di.config.get("widgetServer");
-            app.listen(config.port, function() {
+            app.server = app.listen(config.port, function() {
                 di.log.info("listening to port %s", config.port);
             });
         } catch (e) {

@@ -39,9 +39,11 @@ module.exports = {
                         articles = articles.slice(0, limit);
                         articles.forEach(function(article) {
                             result.push({
-                                "url": article[
-                                    "url"
-                                ],
+                                "url": di.urlHelper
+                                    .getRedirectUrl(
+                                        article[
+                                            "url"
+                                        ]),
                                 "title": article[
                                     "title"
                                 ],
