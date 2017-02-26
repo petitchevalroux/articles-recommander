@@ -23,11 +23,15 @@ try {
     app.controllersPath = path.join(__dirname, "..", "widget", "back",
         "controllers");
 
-    var recommendationsController = require(
-        path.join(app.controllersPath,
-            "recommendations")
-    );
-    app.get("/recommendations.js", recommendationsController.getJs);
+    app.get("/recommendations.js", function (req, res, next) {
+        var recommendationsController = require(
+            path.join(
+                app.controllersPath,
+                "recommendations"
+            )
+        );
+        recommendationsController.getJs(req, res, next);
+    });
 
     // Default error handler
     app.use(function(err, req, res, next) {
