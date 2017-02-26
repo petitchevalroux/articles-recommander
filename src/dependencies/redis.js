@@ -7,4 +7,4 @@ var client = redis.createClient(config);
 client.on("error", function(e) {
     di.log.error(new di.Error("redis error", e));
 });
-module.exports = redis.createClient(config);
+module.exports = client;

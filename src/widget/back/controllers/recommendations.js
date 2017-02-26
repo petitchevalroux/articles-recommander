@@ -17,11 +17,10 @@ module.exports = {
                 if (err) {
                     throw err;
                 }
-                var recommendations = [{
-                    "title": "article title",
-                    "url": "article url",
-                    "image": "image"
-                }];
+                var limit = Math.min(20, parseInt(req.query.count));
+                if (isNaN(limit)) {
+                    limit = 0;
+                }
                 var pos = data.indexOf(
                     "(function artRecLoader(window) {");
                 if (pos < 0) {
@@ -29,18 +28,41 @@ module.exports = {
                         "Unable to find from where removing headers"
                     );
                 }
-                res.set(
-                    "Content-Type",
-                    "application/javascript"
-                );
-                res.send(
-                    data
-                    .substring(pos)
-                    .replace(
-                        "RECOMMENDATIONS",
-                        JSON.stringify(recommendations)
-                    )
-                );
+                di.articlesModel.getRandomIds(limit)
+                    .then(di.articlesModel.getByIds)
+                    .then(function(articles) {
+                        res.set(
+                            "Content-Type",
+                            "application/javascript"
+                        );
+                        var result = [];
+                        articles = articles.slice(0, limit);
+                        articles.forEach(function(article) {
+                            result.push({
+                                "url": article[
+                                    "url"
+                                ],
+                                "title": article[
+                                    "title"
+                                ],
+                                "image": article[
+                                    "image"
+                                ]
+                            });
+                        });
+                        res.send(
+                            data
+                            .substring(pos)
+                            .replace(
+                                "RECOMMENDATIONS",
+                                JSON.stringify(result)
+                            )
+                        );
+                        return result;
+                    })
+                    .catch(function(err) {
+                        next(new di.Error(err));
+                    });
             } catch (err) {
                 next(new di.Error(err));
             }
