@@ -41,7 +41,7 @@ try {
                 "redirect"
             )
         );
-        redirectController.getJs(req, res, next);
+        redirectController.redirect(req, res, next);
     });
 
     // Default error handler
