@@ -3,6 +3,7 @@ var path = require("path");
 var di = require(path.join(__dirname, "..", "di"));
 var express = require("express");
 var app = express();
+var Promise = require("bluebird");
 try {
     di.log.info("environment: %s", di.environment);
 
@@ -57,15 +58,20 @@ try {
     });
 
     app.start = function() {
-        di.log.info("starting");
-        try {
-            var config = di.config.get("widgetServer");
-            app.server = app.listen(config.port, function() {
-                di.log.info("listening to port %s", config.port);
-            });
-        } catch (e) {
-            di.log.error(new di.Error("starting failed", e));
-        }
+        return new Promise(function(resolve, reject) {
+            di.log.info("starting");
+            try {
+                var config = di.config.get("widgetServer");
+                app.server = app.listen(config.port, function() {
+                    di.log.info("listening to port %s",
+                        config.port);
+                });
+                resolve(app);
+            } catch (e) {
+                di.log.error(new di.Error("starting failed", e));
+                reject(e);
+            }
+        });
     };
 } catch (e) {
     di.log.error(new di.Error("loading failed", e));
