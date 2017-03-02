@@ -7,6 +7,7 @@ function ArticlesModel() {}
 
 
 ArticlesModel.prototype.randomArticleIdsSet = "raais";
+ArticlesModel.prototype.redisArticleKey = "r:articles:";
 
 /**
  * Return count random ids
@@ -91,28 +92,149 @@ ArticlesModel.prototype.getRandomIds = function(count) {
  * @returns {Promise}
  */
 ArticlesModel.prototype.getByIds = function(ids) {
+    var self = this;
+    var results = [];
+    return this.getByIdsFromCache(ids)
+        .then(function(articles) {
+            di.log.info(
+                "ArticlesModel.getByIds " +
+                articles.length + " articles fetched from cache"
+            );
+            return self.mergeArticles(ids, articles, results);
+        })
+        .then(function(result) {
+            results = result.articles;
+            return self.getByIdsFromStore(result.ids);
+        })
+        .then(function(articles) {
+            di.log.info(
+                "ArticlesModel.getByIds " +
+                articles.length + " articles fetched from store"
+            );
+            return self.saveToCache(articles);
+        })
+        .then(function(articles) {
+            return self.mergeArticles(ids, articles, results);
+        })
+        .then(function(result) {
+            return result.articles;
+        });
+};
+
+ArticlesModel.prototype.getByIdsFromCache = function(ids) {
+    di.log.info(
+        "ArticlesModel.getByIdsFromCache getting " +
+        ids.length + " articles"
+    );
+    var self = this;
     return new Promise(function(resolve, reject) {
-        if (!ids || ids.length < 1) {
-            resolve([]);
-            return;
-        }
-        di.datastore.find("articles", {
-            "filter": {
-                "id": ids.join(",")
-            }
-        }, function(err, result) {
+        var keys = [];
+        ids.forEach(function(id) {
+            keys.push(self.redisArticleKey + id);
+        });
+        di.redis.mget(keys, function(err, results) {
             if (err) {
                 reject(new di.Error(
-                    "Unable to fetch articles by ids",
-                    err));
+                    "Unable to mget articles by ids",
+                    err
+                ));
                 return;
             }
             var articles = [];
-            result.forEach(function(article) {
-                articles.push(article.toJSON());
+            results.forEach(function(article) {
+                if (article !== null) {
+                    articles.push(JSON.parse(
+                        article));
+                }
             });
             resolve(articles);
         });
     });
 };
+
+ArticlesModel.prototype.getByIdsFromStore = function(ids) {
+    di.log.info(
+        "ArticlesModel.getByIdsFromStore getting " +
+        ids.length + " articles"
+    );
+    var promises = [];
+    ids.forEach(function(id) {
+        promises.push(new Promise(function(resolve, reject) {
+            di.datastore.get("articles", id, function(
+                err, article) {
+                if (err) {
+                    reject(new di.Error(
+                        "Unable to get article from datastore",
+                        err
+                    ));
+                    return;
+                }
+                resolve(article.toJSON());
+            });
+        }));
+    });
+    return Promise
+        .all(promises);
+};
+
+ArticlesModel.prototype.mergeArticles = function(ids, articles, results) {
+    articles.forEach(function(article) {
+        if (article !== null &&
+            typeof(article.id) !== "undefined") {
+            results.push(article);
+        }
+    });
+    var missingIds = [];
+    ids.forEach(function(id) {
+        var found = false;
+        for (var i = 0; i < results.length && !found; i++) {
+            var article = results[i];
+            found = article && article.id === id;
+        }
+        if (!found) {
+            missingIds.push(id);
+        }
+    });
+    return {
+        "ids": missingIds,
+        "articles": results
+    };
+
+};
+
+ArticlesModel.prototype.saveToCache = function(articles) {
+    var self = this;
+    return new Promise(function(resolve) {
+        di.log.info(
+            "ArticlesModel.saveToCache saving " +
+            articles.length + " articles"
+        );
+        var cmds = [];
+        articles.forEach(function(article) {
+            if (article && typeof(article.id) !== undefined) {
+                cmds.push([
+                    "set",
+                    self.redisArticleKey + article.id,
+                    JSON.stringify(article)
+                ]);
+            }
+        });
+        if (cmds.length > 0) {
+            di.redis.multi(cmds)
+                .exec(function(err) {
+                    if (err) {
+                        di.log.error(
+                            new di.Error(
+                                "Unable to save articles to cache",
+                                err
+                            ));
+                    }
+                    resolve(articles);
+                });
+        } else {
+            resolve(articles);
+        }
+    });
+};
+
 module.exports = ArticlesModel;

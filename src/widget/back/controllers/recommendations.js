@@ -28,8 +28,12 @@ module.exports = {
                         "Unable to find from where removing headers"
                     );
                 }
-                di.articlesModel.getRandomIds(limit)
-                    .then(di.articlesModel.getByIds)
+                di.articlesModel
+                    .getRandomIds(limit)
+                    .then(function(ids) {
+                        return di.articlesModel.getByIds(
+                            ids);
+                    })
                     .then(function(articles) {
                         res.set(
                             "Content-Type",
