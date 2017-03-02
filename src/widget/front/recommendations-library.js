@@ -79,6 +79,9 @@ Library.prototype.loadRecommendations = function(recommendations) {
  * @returns {String}
  */
 Library.prototype.getRecommendationsUrl = function(to, count) {
+    if (typeof(window.artRecGetRecommendationsUrl) === "function") {
+        return window.artRecGetRecommendationsUrl(to, count);
+    }
     return "/recommendations.js?" +
         "to=" + encodeURIComponent(to) +
         "&count=" + encodeURIComponent(count);
