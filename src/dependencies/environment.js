@@ -10,4 +10,4 @@ try {
 } catch (e) {
     di.log.error(e);
 }
-module.exports = env === "development" ? env : "production";
+module.exports = env === "development" || env === "test" ? env : "production";

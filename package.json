@@ -21,17 +21,20 @@
     "istanbul": "^0.4.4",
     "js-beautify": "^1.6.3",
     "mocha": "^3.0.2",
+    "phantom": "^4.0.0",
     "sinon": "^1.17.5"
   },
   "dependencies": {
     "@petitchevalroux/error": "^1.0.1",
     "@petitchevalroux/opengraph-fetcher": "^0.0.2",
     "@petitchevalroux/sitemap-parser": "^0.0.1",
+    "bluebird": "^3.4.7",
     "browserify": "^14.1.0",
     "dot": "^1.1.1",
     "express": "^4.14.1",
     "jsonapi-client": "github:holidayextras/jsonapi-client",
     "nconf": "^0.8.4",
+    "redis": "^2.6.5",
     "winston": "^2.3.0"
   }
 }

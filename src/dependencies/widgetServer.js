@@ -3,6 +3,7 @@ var path = require("path");
 var di = require(path.join(__dirname, "..", "di"));
 var express = require("express");
 var app = express();
+var Promise = require("bluebird");
 try {
     di.log.info("environment: %s", di.environment);
 
@@ -23,11 +24,25 @@ try {
     app.controllersPath = path.join(__dirname, "..", "widget", "back",
         "controllers");
 
-    var recommendationsController = require(
-        path.join(app.controllersPath,
-            "recommendations")
-    );
-    app.get("/recommendations.js", recommendationsController.getJs);
+    app.get("/recommendations.js", function(req, res, next) {
+        var recommendationsController = require(
+            path.join(
+                app.controllersPath,
+                "recommendations"
+            )
+        );
+        recommendationsController.getJs(req, res, next);
+    });
+
+    app.get("/redirect", function(req, res, next) {
+        var redirectController = require(
+            path.join(
+                app.controllersPath,
+                "redirect"
+            )
+        );
+        redirectController.redirect(req, res, next);
+    });
 
     // Default error handler
     app.use(function(err, req, res, next) {
@@ -43,15 +58,20 @@ try {
     });
 
     app.start = function() {
-        di.log.info("starting");
-        try {
-            var config = di.config.get("widgetServer");
-            app.listen(config.port, function() {
-                di.log.info("listening to port %s", config.port);
-            });
-        } catch (e) {
-            di.log.error(new di.Error("starting failed", e));
-        }
+        return new Promise(function(resolve, reject) {
+            di.log.info("starting");
+            try {
+                var config = di.config.get("widgetServer");
+                app.server = app.listen(config.port, function() {
+                    di.log.info("listening to port %s",
+                        config.port);
+                });
+                resolve(app);
+            } catch (e) {
+                di.log.error(new di.Error("starting failed", e));
+                reject(e);
+            }
+        });
     };
 } catch (e) {
     di.log.error(new di.Error("loading failed", e));
