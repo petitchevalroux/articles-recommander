@@ -124,12 +124,7 @@ describe("Functional widget", function() {
                 return assert.equal(length, 10);
             })
             .catch(function(err) {
-                di.log.error(
-                    new di.Error(
-                        "error test",
-                        err
-                    )
-                );
+                throw new di.Error("error test", err);
             });
     });
 
@@ -146,12 +141,7 @@ describe("Functional widget", function() {
                 return assert.equal(length, 20);
             })
             .catch(function(err) {
-                di.log.error(
-                    new di.Error(
-                        "error test",
-                        err
-                    )
-                );
+                throw new di.Error("error test", err);
             });
     });
 
@@ -168,12 +158,7 @@ describe("Functional widget", function() {
                 return assert.equal(length, 10);
             })
             .catch(function(err) {
-                di.log.error(
-                    new di.Error(
-                        "error test",
-                        err
-                    )
-                );
+                throw new di.Error("error test", err);
             });
     });
 });
