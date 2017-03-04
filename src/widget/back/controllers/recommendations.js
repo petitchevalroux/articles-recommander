@@ -31,8 +31,9 @@ module.exports = {
                 di.articlesModel
                     .getRandomIds(limit)
                     .then(function(ids) {
-                        return di.articlesModel.getByIds(
-                            ids);
+                        return di
+                            .articlesModel
+                            .getByIds(ids);
                     })
                     .then(function(articles) {
                         res.set(

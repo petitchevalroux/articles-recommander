@@ -121,13 +121,18 @@ ArticlesModel.prototype.getByIds = function(ids) {
         });
 };
 
+/**
+ * Return articles from cache by ids
+ * @param {Array} ids
+ * @returns {Promise}
+ */
 ArticlesModel.prototype.getByIdsFromCache = function(ids) {
-    di.log.info(
-        "ArticlesModel.getByIdsFromCache getting " +
-        ids.length + " articles"
-    );
     var self = this;
     return new Promise(function(resolve, reject) {
+        di.log.info(
+            "ArticlesModel.getByIdsFromCache getting " +
+            ids.length + " articles"
+        );
         var keys = [];
         ids.forEach(function(id) {
             keys.push(self.redisArticleKey + id);
@@ -152,31 +157,51 @@ ArticlesModel.prototype.getByIdsFromCache = function(ids) {
     });
 };
 
+/**
+ * Return articles from store by ids
+ * @param {Array} ids
+ * @returns {Promise}
+ */
 ArticlesModel.prototype.getByIdsFromStore = function(ids) {
-    di.log.info(
-        "ArticlesModel.getByIdsFromStore getting " +
-        ids.length + " articles"
-    );
-    var promises = [];
-    ids.forEach(function(id) {
-        promises.push(new Promise(function(resolve, reject) {
-            di.datastore.get("articles", id, function(
-                err, article) {
-                if (err) {
-                    reject(new di.Error(
-                        "Unable to get article from datastore",
-                        err
-                    ));
-                    return;
-                }
-                resolve(article.toJSON());
-            });
-        }));
-    });
-    return Promise
-        .all(promises);
+    try {
+        di.log.info(
+            "ArticlesModel.getByIdsFromStore getting " +
+            ids.length + " articles"
+        );
+        var promises = [];
+        ids.forEach(function(id) {
+            promises.push(new Promise(function(resolve, reject) {
+                di.datastore
+                    .get("articles", id, function(err,
+                        article) {
+                        if (err) {
+                            reject(new di.Error(
+                                "Unable to get article from datastore",
+                                err
+                            ));
+                            return;
+                        }
+                        resolve(article.toJSON());
+                    });
+            }));
+        });
+        return Promise
+            .all(promises);
+    } catch (err) {
+        return new Promise(function(resolve, reject) {
+            reject(new di.Error("Unable to get article from store",
+                err));
+        });
+    }
 };
 
+/**
+ * Append articles to results and return missing ids
+ * @param {array} ids of asked ids
+ * @param {type} articles ids of new articls
+ * @param {type} results already fetched articles
+ * @returns {Object}
+ */
 ArticlesModel.prototype.mergeArticles = function(ids, articles, results) {
     articles.forEach(function(article) {
         if (article !== null &&
@@ -199,9 +224,12 @@ ArticlesModel.prototype.mergeArticles = function(ids, articles, results) {
         "ids": missingIds,
         "articles": results
     };
-
 };
-
+/**
+ * Save articles to cache
+ * @param {Array} articles
+ * @returns {Promise}
+ */
 ArticlesModel.prototype.saveToCache = function(articles) {
     var self = this;
     return new Promise(function(resolve) {
