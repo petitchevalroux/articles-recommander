@@ -40,6 +40,15 @@ module.exports = {
                             "Content-Type",
                             "application/javascript"
                         );
+                        res.set(
+                            "Cache-Control",
+                            "public, max-age=3600, s-maxage=60"
+                        );
+                        res.set(
+                            "Last-Modified",
+                            (new Date())
+                            .toUTCString()
+                        );
                         var result = [];
                         articles = articles.slice(0, limit);
                         articles.forEach(function(article) {
