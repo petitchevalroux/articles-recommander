@@ -133,6 +133,10 @@ ArticlesModel.prototype.getByIdsFromCache = function(ids) {
             "ArticlesModel.getByIdsFromCache getting " +
             ids.length + " articles"
         );
+        if (!ids.length) {
+            resolve([]);
+            return;
+        }
         var keys = [];
         ids.forEach(function(id) {
             keys.push(self.redisArticleKey + id);
