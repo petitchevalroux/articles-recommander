@@ -13,6 +13,7 @@ try {
         "etag": false
     }));
     app.set("x-powered-by", false);
+    app.set("etag", false);
     di.log.info("static path: %s", app.staticPath);
 
     // Define path allowing to test default error handler
