@@ -13,12 +13,13 @@ Library.prototype.recommendationsCount = 0;
  * @param {int} count
  * @returns {undefined}
  */
-Library.prototype.addSlot = function(target, count) {
+Library.prototype.addSlot = function(target, count, template) {
     this.recommendationsCount = this.recommendationsCount +
         Math.max(0, parseInt(count));
     this.slots.push({
         "target": target,
-        "count": count
+        "count": count,
+        "template": template
     });
 };
 /**

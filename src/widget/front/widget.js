@@ -7,7 +7,7 @@ try {
     var ArtRecLib = require("./recommendations-library");
     var lib = new ArtRecLib();
     slots.forEach(function(options) {
-        lib.addSlot(options.target, options.count);
+        lib.addSlot(options.target, options.count, options.template);
     });
     window.artRecLib = lib;
     window.artRecLib.start();
