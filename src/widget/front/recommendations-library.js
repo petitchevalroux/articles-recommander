@@ -35,12 +35,17 @@ Library.prototype.start = function() {
  * @returns {undefined}
  */
 Library.prototype.fetchRecommendations = function(to) {
+    var count = this.getRecommendationsCount();
+    // Avoid to call recommendations with empty count
+    if (!count) {
+        return;
+    }
     var script = document.createElement("script");
     script.setAttribute(
         "src",
         this.getRecommendationsUrl(
             to,
-            this.getRecommendationsCount()
+            count
         )
     );
     document.head.appendChild(script);
