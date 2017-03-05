@@ -12,6 +12,7 @@ try {
     app.use(express.static(app.staticPath, {
         "etag": false
     }));
+    app.set("x-powered-by", false);
     di.log.info("static path: %s", app.staticPath);
 
     // Define path allowing to test default error handler
