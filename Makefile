@@ -1,3 +1,6 @@
+.PHONY: all
+all: .build/front
+
 .PHONY: install
 install: .build/install
 
@@ -27,12 +30,21 @@ check-coverage: .build/check-coverage
 
 .PHONY: clean
 clean:
-	rm -rf .build node_modules
+	rm -rf .build node_modules static/widget/js/main.js
 
 .build/build: Makefile
 	mkdir -p .build && touch $@
 
+ifeq ($(ENV),production)
+  NPM_INSTALL_CMD=npm install --production
+else
+  NPM_INSTALL_CMD=npm install
+endif
+
 .build/install: .build/build package.json
+	$(NPM_INSTALL_CMD) && touch $@
+
+.build/install-dev: .build/build package.json
 	npm install && touch $@
 
 TEST_PATH="tests"
@@ -43,7 +55,7 @@ SOURCE_FILES=$(shell test -d $(SOURCE_PATH) && find $(SOURCE_PATH) -type f -name
 
 MOCHA=node_modules/.bin/_mocha
 
-$(MOCHA): .build/install
+$(MOCHA): .build/install-dev
 
 .build/tests: .build/build $(MOCHA) $(TEST_FILES) $(SOURCE_FILES)
 	test "$(TEST_FILES)" = "" || $(MOCHA) $(TEST_FILES)
@@ -51,7 +63,7 @@ $(MOCHA): .build/install
 
 JSBEAUTIFY=node_modules/.bin/js-beautify
 
-$(JSBEAUTIFY): .build/install
+$(JSBEAUTIFY): .build/install-dev
 
 .build/beautify: .build/build $(JSBEAUTIFY) $(TEST_FILES) $(SOURCE_FILES)
 	$(eval FILES := $(filter-out .build/build $(JSBEAUTIFY), $?))
@@ -60,7 +72,7 @@ $(JSBEAUTIFY): .build/install
 
 ESLINT=node_modules/.bin/eslint
 
-$(ESLINT): .build/install
+$(ESLINT): .build/install-dev
 
 .build/lint: .build/build $(ESLINT) $(TEST_FILES) $(SOURCE_FILES)
 	$(eval FILES := $(filter-out .build/build, $(filter-out $(ESLINT), $?)))
@@ -69,7 +81,7 @@ $(ESLINT): .build/install
 
 ISTANBUL=node_modules/.bin/istanbul
 
-$(ISTANBUL): .build/install
+$(ISTANBUL): .build/install-dev
 
 coverage/lcov.info: .build/build $(ISTANBUL) $(TEST_FILES) $(SOURCE_FILES)
 	test "$(TEST_FILES)" = "" || $(ISTANBUL) cover $(MOCHA) $(TEST_FILES)
@@ -78,12 +90,6 @@ coverage/lcov-report/index.html: coverage
 
 .build/check-coverage: .istanbul.yml coverage
 	test ! -f coverage/lcov.info || $(ISTANBUL) check
-	touch $@
-
-.PHONY: compile
-compile: .build/compile
-
-.build/compile: .build/front
 	touch $@
 
 .build/front: .build/front-javascript
