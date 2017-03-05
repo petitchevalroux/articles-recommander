@@ -94,6 +94,15 @@ ArticlesModel.prototype.getRandomIds = function(count) {
 ArticlesModel.prototype.getByIds = function(ids) {
     var self = this;
     var results = [];
+    di.log.info(
+        "ArticlesModel.getByIds getting " +
+        ids.length + " articles"
+    );
+    if (!ids.length) {
+        return new Promise(function(resolve) {
+            resolve([]);
+        });
+    }
     return this.getByIdsFromCache(ids)
         .then(function(articles) {
             di.log.info(
