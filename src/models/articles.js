@@ -34,12 +34,11 @@ ArticlesModel.prototype.getRandomIds = function(count) {
                     di.log.info(
                         "ArticlesModel.getRandomIds building redis"
                     );
-                    di.datastore.getModel("articles")
-                        .find({
-                            "filter": {
+                    di.datastore.find(
+                            "articles", {
                                 "limit": 1000
                             }
-                        })
+                        )
                         .then(function(articles) {
                             var cmds = [];
                             var articleIds = [];
@@ -176,38 +175,20 @@ ArticlesModel.prototype.getByIdsFromCache = function(ids) {
  * @returns {Promise}
  */
 ArticlesModel.prototype.getByIdsFromStore = function(ids) {
-    try {
-        di.log.info(
-            "ArticlesModel.getByIdsFromStore getting " +
-            ids.length + " articles"
-        );
-        var promises = [];
-        ids.forEach(function(id) {
-            promises.push(new Promise(function(resolve, reject) {
-                di.datastore.getModel("articles")
-                    .findById({
-                        "id": id
-                    })
-                    .then(function(article) {
-                        resolve(article);
-                        return article;
-                    })
-                    .catch(function(err) {
-                        reject(new di.Error(
-                            "Unable to get article from datastore",
-                            err
-                        ));
-                    });
-            }));
-        });
-        return Promise
-            .all(promises);
-    } catch (err) {
-        return new Promise(function(resolve, reject) {
-            reject(new di.Error("Unable to get article from store",
-                err));
+    if (!ids.length) {
+        return new Promise(function(resolve) {
+            resolve([]);
         });
     }
+    di.log.info(
+        "ArticlesModel.getByIdsFromStore getting " +
+        ids.length + " articles"
+    );
+    return di.datastore.find("articles", {
+        "filter": {
+            "id": ids
+        }
+    });
 };
 
 /**
