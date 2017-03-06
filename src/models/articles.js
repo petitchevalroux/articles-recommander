@@ -261,4 +261,51 @@ ArticlesModel.prototype.saveToCache = function(articles) {
     });
 };
 
+ArticlesModel.prototype.getByUrls = function(urls) {
+    if (!urls.length) {
+        return new Promise(function(resolve) {
+            resolve([]);
+        });
+    }
+    di.log.info(
+        "ArticlesModel.getByUrls getting " +
+        urls.length + " articles"
+    );
+    return di.datastore
+        .find("articles", {
+            filter: {
+                "url": urls
+            }
+        });
+};
+
+/**
+ * Update an article if it's url exists or create a new one
+ * @param {Object} article
+ * @returns {Promise}
+ */
+ArticlesModel.prototype.upsertByUrl = function(article) {
+    if (!article.url) {
+        return new Promise(function(resolve, reject) {
+            reject(new di.Error("Missing url to upsert article %j",
+                article));
+        });
+    }
+    var self = this;
+    return self
+        .getByUrls([article.url])
+        .then(function(articles) {
+            var p;
+            // Article not found
+            if (!articles.length || !articles[0] || !articles[0].id) {
+                p = di.datastore.insert("articles", article);
+            } else {
+                article.id = articles[0].id;
+                p = di.datastore.update("articles", article.id,
+                    article);
+            }
+            return p;
+        });
+};
+
 module.exports = ArticlesModel;
