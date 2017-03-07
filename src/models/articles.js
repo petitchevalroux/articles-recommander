@@ -34,48 +34,47 @@ ArticlesModel.prototype.getRandomIds = function(count) {
                     di.log.info(
                         "ArticlesModel.getRandomIds building redis"
                     );
-                    di.datastore.find("articles", {
-                        "page": {
-                            "limit": 1000
-                        },
-                        "sort": "-created"
-                    }, function(err, articles) {
-                        if (err) {
+                    di.datastore.find(
+                            "articles", {
+                                "limit": 1000
+                            }
+                        )
+                        .then(function(articles) {
+                            var cmds = [];
+                            var articleIds = [];
+                            articles.forEach(function(
+                                article) {
+                                if (articleIds.length <
+                                    count) {
+                                    articleIds.push(
+                                        article
+                                        .id);
+                                }
+                                cmds.push(["sadd",
+                                    self.randomArticleIdsSet,
+                                    article
+                                    .id
+                                ]);
+                            });
+                            di.redis.multi(cmds)
+                                .exec(function(err) {
+                                    if (err) {
+                                        di.log.error(
+                                            new di.Error(
+                                                "Unable to add ids to random set",
+                                                err
+                                            ));
+                                    }
+                                    resolve(articleIds);
+                                });
+                            return articleIds;
+                        })
+                        .catch(function(err) {
                             di.log.error(new di.Error(
                                 "Unable to find articles",
                                 err));
                             resolve([]);
-                            return;
-                        }
-                        var cmds = [];
-                        var articleIds = [];
-                        articles.forEach(function(
-                            article) {
-                            article = article.toJSON();
-                            if (articleIds.length <
-                                count) {
-                                articleIds.push(
-                                    article
-                                    .id);
-                            }
-                            cmds.push(["sadd",
-                                self.randomArticleIdsSet,
-                                article
-                                .id
-                            ]);
                         });
-                        di.redis.multi(cmds)
-                            .exec(function(err) {
-                                if (err) {
-                                    di.log.error(
-                                        new di.Error(
-                                            "Unable to add ids to random set",
-                                            err
-                                        ));
-                                }
-                                resolve(articleIds);
-                            });
-                    });
                 } else {
                     di.log.info(
                         "ArticlesModel.getRandomIds from redis"
@@ -176,36 +175,20 @@ ArticlesModel.prototype.getByIdsFromCache = function(ids) {
  * @returns {Promise}
  */
 ArticlesModel.prototype.getByIdsFromStore = function(ids) {
-    try {
-        di.log.info(
-            "ArticlesModel.getByIdsFromStore getting " +
-            ids.length + " articles"
-        );
-        var promises = [];
-        ids.forEach(function(id) {
-            promises.push(new Promise(function(resolve, reject) {
-                di.datastore
-                    .get("articles", id, function(err,
-                        article) {
-                        if (err) {
-                            reject(new di.Error(
-                                "Unable to get article from datastore",
-                                err
-                            ));
-                            return;
-                        }
-                        resolve(article.toJSON());
-                    });
-            }));
-        });
-        return Promise
-            .all(promises);
-    } catch (err) {
-        return new Promise(function(resolve, reject) {
-            reject(new di.Error("Unable to get article from store",
-                err));
+    if (!ids.length) {
+        return new Promise(function(resolve) {
+            resolve([]);
         });
     }
+    di.log.info(
+        "ArticlesModel.getByIdsFromStore getting " +
+        ids.length + " articles"
+    );
+    return di.datastore.find("articles", {
+        "filter": {
+            "id": ids
+        }
+    });
 };
 
 /**
