@@ -210,7 +210,8 @@ ArticlesModel.prototype.mergeArticles = function(ids, articles, results) {
         var found = false;
         for (var i = 0; i < results.length && !found; i++) {
             var article = results[i];
-            found = article && article.id === id;
+            found = article && article.id && article.id.toString() ===
+                id.toString();
         }
         if (!found) {
             missingIds.push(id);
