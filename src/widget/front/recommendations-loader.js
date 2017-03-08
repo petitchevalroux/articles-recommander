@@ -5,7 +5,7 @@
 /* eslint no-console: 0 */
 (function artRecLoader(window) {
     try {
-        window.artRecLib.loadRecommendations(RECOMMENDATIONS);
+        window.artRec.loadRecommendations(RECOMMENDATIONS);
     } catch (e) {
         console.log("artrec error: " + e);
     }

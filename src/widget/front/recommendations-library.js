@@ -6,36 +6,29 @@ var doT = require("dot");
 function Library() {}
 
 Library.prototype.slots = [];
-Library.prototype.recommendationsCount = 0;
 /**
  * Add slot to the current page
  * @param {string} target
  * @param {int} count
  * @returns {undefined}
  */
-Library.prototype.addSlot = function(target, count, template) {
-    this.recommendationsCount = this.recommendationsCount +
-        Math.max(0, parseInt(count));
-    this.slots.push({
-        "target": target,
-        "count": count,
-        "template": template
-    });
+Library.prototype.defineSlot = function(options) {
+    this.slots.push(options);
 };
 /**
  * Called from the page when slots has been defined
  * @returns {undefined}
  */
 Library.prototype.start = function() {
-    this.fetchRecommendations(document.location.href);
+    this.fetchRecommendations(document.location.href, this.getRecommendationsCount());
 };
 /**
- * Fetch recommendations from servers
+ * Load recommendations from servers
  * @param {string} to url to fetch recommendations for
+ * @param {number} number of recommendations to load
  * @returns {undefined}
  */
-Library.prototype.fetchRecommendations = function(to) {
-    var count = this.getRecommendationsCount();
+Library.prototype.fetchRecommendations = function(to, count) {
     // Avoid to call recommendations with empty count
     if (!count) {
         return;
@@ -97,7 +90,11 @@ Library.prototype.getRecommendationsUrl = function(to, count) {
  * @returns {.recommendationsCount|Number}
  */
 Library.prototype.getRecommendationsCount = function() {
-    return this.recommendationsCount;
+    var count = 0;
+    this.slots.forEach(function(slot) {
+        count = count + Math.max(0, slot.count);
+    });
+    return count;
 };
 
 /**
@@ -127,6 +124,19 @@ Library.prototype.getSlotTemplate = function(slot) {
         tpl = slot.template;
     }
     return doT.template(tpl);
+};
+
+/**
+ * Run defered commands
+ * @param {Array} cmds
+ * @returns {undefined}
+ */
+Library.prototype.run = function(cmds) {
+    cmds.forEach(function(cmd) {
+        if (typeof(cmd) === "function") {
+            cmd();
+        }
+    });
 };
 
 module.exports = Library;

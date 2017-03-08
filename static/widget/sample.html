@@ -5,8 +5,11 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <script type="text/javascript"><!--
-            var artRecSlots = [];
-            artRecSlots.push({"target":"content","count":10});
+            var artRec = artRec || {"cmd":[]};
+            artRec.cmd.push(function(){
+                artRec.defineSlot({"target":"content","count":10});
+                artRec.start();
+            });
         //-->
         </script>
         <script src="/js/main.js" async></script>

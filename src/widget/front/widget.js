@@ -3,14 +3,10 @@
 "use strict";
 
 try {
-    var slots = window.artRecSlots;
-    var ArtRecLib = require("./recommendations-library");
-    var lib = new ArtRecLib();
-    slots.forEach(function(options) {
-        lib.addSlot(options.target, options.count, options.template);
-    });
-    window.artRecLib = lib;
-    window.artRecLib.start();
+    var cmd = window.artRec && window.artRec.cmd ? window.artRec.cmd : [];
+    var Lib = require("./recommendations-library");
+    window.artRec = new Lib();
+    window.artRec.run(cmd);
 } catch (e) {
     console.log("artrec error: " + e);
 }
