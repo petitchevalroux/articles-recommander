@@ -1,5 +1,6 @@
 {
     "widgetServer": {"port":3001},
     "redirectHost":"",
-    "redis":{"url":"redis://127.0.0.1:6379","prefix":"artrec:"}
+    "redis":{"url":"redis://127.0.0.1:6379","prefix":"artrec:"},
+    "eventTracker":{"endPoint":"http://127.0.0.1:3001/e"}
 }
