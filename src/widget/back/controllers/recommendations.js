@@ -51,7 +51,20 @@ module.exports = {
                         );
                         var result = [];
                         articles = articles.slice(0, limit);
+                        var events = [];
                         articles.forEach(function(article) {
+                            var event = {
+                                "action": "display",
+                                "value": article
+                                    .url
+                            };
+                            if (req.query && typeof(
+                                    req.query.to) ===
+                                "string") {
+                                event.label = req.query
+                                    .to;
+                            }
+                            events.push(event);
                             result.push({
                                 "url": di.urlHelper
                                     .getRedirectUrl(
@@ -74,6 +87,23 @@ module.exports = {
                                 JSON.stringify(result)
                             )
                         );
+                        if (events.length > 0) {
+                            di.tracker.send(events)
+                                .then(function() {
+                                    di.log.info(
+                                        "tracked events: %j",
+                                        events);
+                                    return events;
+                                })
+                                .catch(function(err) {
+                                    di.log.error(
+                                        new di.Error(
+                                            "error tracking events: %j",
+                                            events,
+                                            err
+                                        ));
+                                });
+                        }
                         return result;
                     })
                     .catch(function(err) {
