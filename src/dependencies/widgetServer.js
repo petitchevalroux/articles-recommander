@@ -46,6 +46,26 @@ try {
         redirectController.redirect(req, res, next);
     });
 
+    // Events tracker url
+    app.get("/e", function(req, res) {
+        res.set(
+            "Content-Type",
+            "application/javascript"
+        );
+        // Cached to max
+        res.set(
+            "Cache-Control",
+            "public, max-age=0, s-maxage=0"
+        );
+        res.set(
+            "Last-Modified",
+            (new Date())
+            .toUTCString()
+        );
+        // We don't do anything as event are handled from access log
+        res.send("//ok");
+    });
+
     // Default error handler
     app.use(function(err, req, res, next) {
         if (res.headersSent) {

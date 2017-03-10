@@ -77,6 +77,10 @@ describe("Functional widget", function() {
             .returns({
                 "level": "error"
             });
+        toRestore[0].withArgs("eventsTracker")
+            .returns({
+                "endPoint": "http://127.0.0.1:7001/e"
+            });
         return require(path.join(__dirname, "..", "..", "src",
                 "servers", "widget"))
             .then(function() {
