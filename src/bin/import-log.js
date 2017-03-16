@@ -17,9 +17,17 @@ var clf = new Clf({
 var output = new stream.Writable({
     objectMode: true
 });
-output._write = function(chunk, enc, cb) {
-    process.stdout.write(JSON.stringify(chunk) + "\n");
-    cb();
+output._write = function(event, enc, cb) {
+    di.eventsDatastore.insert("events", event)
+        .then(function(result) {
+            di.log.info("event inserted: %j", event);
+            cb();
+            return result;
+        })
+        .catch(function(err) {
+            di.log.error("unable to insert event: %j", event, err);
+            cb();
+        });
 };
 
 inStream.pipe(clf)
@@ -31,14 +39,17 @@ inStream.pipe(clf)
             di.logparser.getEvents(chunk)
                 .then(function(events) {
                     events.forEach(function(event) {
-                        stream.push(event);
+                        if (event !== null) {
+                            stream.push(event);
+                        }
                     });
+                    cb();
                     return events;
                 })
                 .catch(function(err) {
                     stream.emit("error", err);
+                    cb();
                 });
-            cb();
         }
     }))
     .pipe(output);
