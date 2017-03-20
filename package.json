@@ -32,9 +32,12 @@
     "browserify": "^14.1.0",
     "dot": "^1.1.1",
     "express": "^4.14.1",
+    "influx": "^5.0.6",
     "jsonapi-client": "github:holidayextras/jsonapi-client",
     "loopback-nodejs-client": "github:petitchevalroux/loopback-nodejs-client#d9eb2d2bf6dfa4f8bf0580e86806c28471becee3",
     "nconf": "^0.8.4",
+    "ncsa-combined-log-format": "^2.0.0",
+    "qs": "^6.4.0",
     "redis": "^2.6.5",
     "request": "^2.81.0",
     "winston": "^2.3.0"
