@@ -1,7 +1,8 @@
 "use strict";
+var influx = require("influx");
 
 function DatastoreInfluxAdapter(options) {
-    var Client = require("influx")
+    var Client = influx
         .InfluxDB;
     this.client = new Client(options);
 }
@@ -32,6 +33,38 @@ DatastoreInfluxAdapter.prototype.insert = function(type, data) {
         "fields": fields,
         "timestamp": timestamp
     }]);
+};
+
+DatastoreInfluxAdapter.prototype.find = function(type, options) {
+    var query = "SELECT " +
+        this.getFields(options.fields) +
+        " FROM " +
+        influx.escape.measurement(type) +
+        this.getWhere(options.filter);
+    return this.client.query(query);
+};
+
+DatastoreInfluxAdapter.prototype.getFields = function(fields) {
+    if (!fields || !fields.length) {
+        return "*";
+    }
+    return fields.join(",");
+};
+
+DatastoreInfluxAdapter.prototype.getWhere = function(filter) {
+    if (!filter) {
+        return "";
+    }
+    var filters = Object.getOwnPropertyNames(filter);
+    if (!filters.length) {
+        return "";
+    }
+    var e = new influx.Expression();
+    filters.forEach(function(field) {
+        e.field(field)
+            .equals.value(filter[field]);
+    });
+    return " WHERE " + e.toString();
 };
 
 module.exports = DatastoreInfluxAdapter;
