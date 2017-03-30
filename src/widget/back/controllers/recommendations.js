@@ -28,8 +28,8 @@ module.exports = {
                         "Unable to find from where removing headers"
                     );
                 }
-                di.articlesModel
-                    .getRandomIds(limit)
+                di.recommendations
+                    .getArticlesIds(limit)
                     .then(function(ids) {
                         return di
                             .articlesModel

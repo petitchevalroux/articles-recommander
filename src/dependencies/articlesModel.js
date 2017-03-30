@@ -1,4 +1,4 @@
 "use strict";
 var path = require("path");
-var ArticlesModel = require(path.join(__dirname, "..", "models", "articles"));
-module.exports = new ArticlesModel();
+var Model = require(path.join(__dirname, "..", "models", "articles"));
+module.exports = new Model();
