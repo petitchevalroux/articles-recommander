@@ -66,6 +66,7 @@ function getFragmentById(id) {
     });
 }
 describe("Functional widget", function() {
+    this.timeout(10000);
     var toRestore = [];
     before(function() {
         toRestore.push(sinon.stub(di.config, "get"));
