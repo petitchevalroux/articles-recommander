@@ -8,6 +8,10 @@ function ArticlesStatsModel() {}
 
 ArticlesStatsModel.prototype.redisDisplayArticles = "asmdas";
 
+/**
+ * Update statistics
+ * @returns {Promise}
+ */
 ArticlesStatsModel.prototype.update = function() {
     return this.updateDisplay()
         .then(function(updated) {
@@ -17,6 +21,11 @@ ArticlesStatsModel.prototype.update = function() {
         });
 };
 
+/**
+ * Return display count of an article by its url
+ * @param {string} url
+ * @returns {unresolved}
+ */
 ArticlesStatsModel.prototype.getDisplayByUrl = function(url) {
     return di.eventsDatastore
         .find("articles", {
@@ -34,7 +43,7 @@ ArticlesStatsModel.prototype.getDisplayByUrl = function(url) {
 };
 
 /**
- * Update articles display date
+ * Update articles display statistics
  * @returns {Promise}
  */
 ArticlesStatsModel.prototype.updateDisplay = function() {
