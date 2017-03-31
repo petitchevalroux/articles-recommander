@@ -32,7 +32,7 @@ ArticlesModel.prototype.getRandomIds = function(count) {
                 }
                 if (!result || !result.length) {
                     di.log.info(
-                        "ArticlesModel.getRandomIds building redis"
+                        "ArticlesModel.getRecommendationsIds building redis"
                     );
                     di.datastore.find(
                             "articles", {
@@ -77,7 +77,7 @@ ArticlesModel.prototype.getRandomIds = function(count) {
                         });
                 } else {
                     di.log.info(
-                        "ArticlesModel.getRandomIds from redis"
+                        "ArticlesModel.getRecommendationsIds from redis"
                     );
                     resolve(result);
                 }

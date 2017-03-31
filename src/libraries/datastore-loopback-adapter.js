@@ -39,6 +39,9 @@ DatastoreLoopbackAdapter.prototype.getFilter = function(options) {
     if (options["limit"]) {
         filter["limit"] = options["limit"];
     }
+    if (options["offset"]) {
+        filter["skip"] = options["offset"];
+    }
     return {
         "filter": filter
     };
@@ -71,6 +74,5 @@ DatastoreLoopbackAdapter.prototype.getWhere = function(where) {
 DatastoreLoopbackAdapter.prototype.getCondition = function(condition) {
     return condition;
 };
-
 
 module.exports = DatastoreLoopbackAdapter;

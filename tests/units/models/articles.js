@@ -8,21 +8,14 @@ var articlesModel = di.articlesModel;
 var toRestore = [];
 describe("Articles model", function() {
     before(function() {
-        var RedisClient = require("redis")
-            .RedisClient;
-        // Avoid redis connection
-        RedisClient.prototype.create_stream = function() {};
-        di.redis = new RedisClient();
-        toRestore.push(sinon.stub(di.config, "get"));
-        toRestore[0].withArgs("log")
-            .returns({
-                "level": "error"
-            });
+        di.redis = require(path.join(__dirname, "..", "..",
+            "mocks", "redis"));
     });
     after(function() {
         toRestore.forEach(function(stub) {
             stub.restore();
         });
+        delete di.redis;
     });
     describe("getByIds", function() {
         it(
