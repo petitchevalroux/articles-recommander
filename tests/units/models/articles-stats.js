@@ -80,4 +80,26 @@ describe("Articles Stats model", function() {
             });
     });
 
+
+    describe("setDisplay", function() {
+        it(
+            "Should save display stats to redis for the article id",
+            function() {
+                var zaddStub = sinon.stub(di.redis, "zadd",
+                    function(set, score, member, cb) {
+                        cb(null);
+                    });
+                toRestore.push(zaddStub);
+                return model
+                    .setDisplay("article-id", "score")
+                    .then(function() {
+                        assert.equal(zaddStub.getCall(0)
+                            .args[1], "score");
+                        assert.equal(zaddStub.getCall(0)
+                            .args[2], "article-id");
+                        return null;
+                    });
+            });
+    });
+
 });
