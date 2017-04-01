@@ -52,6 +52,7 @@ module.exports = {
                         var result = [];
                         articles = articles.slice(0, limit);
                         var events = [];
+                        var articleDisplayIds = [];
                         articles.forEach(function(article) {
                             var event = {
                                 "action": "display",
@@ -65,6 +66,8 @@ module.exports = {
                                     .to;
                             }
                             events.push(event);
+                            articleDisplayIds.push(
+                                article.id);
                             result.push({
                                 "url": di.urlHelper
                                     .getRedirectUrl(
@@ -100,6 +103,26 @@ module.exports = {
                                         new di.Error(
                                             "error tracking events: %j",
                                             events,
+                                            err
+                                        ));
+                                });
+                        }
+                        if (articleDisplayIds.length > 0) {
+                            di
+                                .articlesStatsModel
+                                .incrementDisplayByIds(
+                                    articleDisplayIds)
+                                .then(function(ids) {
+                                    di.log.info(
+                                        "Incremented display stats for: %j",
+                                        ids);
+                                    return ids;
+                                })
+                                .catch(function(err) {
+                                    di.log.error(
+                                        new di.Error(
+                                            "error incrementing display stats: %j",
+                                            articleDisplayIds,
                                             err
                                         ));
                                 });
