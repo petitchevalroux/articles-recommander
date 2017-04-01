@@ -139,14 +139,14 @@ ArticlesStatsModel.prototype.getWriteDisplayStream = function() {
             "objectMode": true,
             "write": function(article, encoding, callback) {
                 var s = this;
-                di.redis.zadd(
-                    self.redisDisplayArticles,
-                    article.id,
-                    article.display,
-                    function(err) {
-                        if (err) {
-                            s.emit("error", err);
-                        }
+                self
+                    .setDisplay(article.id, article.display)
+                    .then(function() {
+                        callback();
+                        return article;
+                    })
+                    .catch(function(err) {
+                        s.emit("error", new di.Error(err));
                         callback();
                     });
             }
@@ -182,6 +182,28 @@ ArticlesStatsModel.prototype.incrementDisplayByIds = function(ids) {
                     return;
                 }
                 resolve(ids);
+            });
+    });
+};
+
+/**
+ * Set display statistic for an article
+ * @param {string} id
+ * @param {number} score
+ * @returns {Promise}
+ */
+ArticlesStatsModel.prototype.setDisplay = function(id, score) {
+    var self = this;
+    return new Promise(function(resolve, reject) {
+        di.redis.zadd(
+            self.redisDisplayArticles,
+            score,
+            id,
+            function(err) {
+                if (err) {
+                    reject(err);
+                }
+                resolve();
             });
     });
 };
