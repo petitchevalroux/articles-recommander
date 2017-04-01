@@ -14,10 +14,13 @@ describe("Articles Stats model", function() {
             "mocks", "redis"));
     });
     after(function() {
+        delete di.redis;
+    });
+
+    afterEach(function() {
         toRestore.forEach(function(stub) {
             stub.restore();
         });
-        delete di.redis;
     });
 
     describe("updateDisplay", function() {
