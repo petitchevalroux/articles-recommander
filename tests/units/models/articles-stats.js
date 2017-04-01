@@ -105,4 +105,28 @@ describe("Articles Stats model", function() {
             });
     });
 
+    describe("getLeastDisplayIds", function() {
+        it(
+            "Should call redis to return count least displayed ids",
+            function() {
+                var zrangeStub = sinon.stub(di.redis,
+                    "zrange",
+                    function(set, start, stop, cb) {
+                        cb(null);
+                    });
+                toRestore.push(zrangeStub);
+                return model
+                    .getLeastDisplayIds(7)
+                    .then(function() {
+                        assert.equal(zrangeStub.getCall(
+                                0)
+                            .args[1], 0);
+                        assert.equal(zrangeStub.getCall(
+                                0)
+                            .args[2], 6);
+                        return null;
+                    });
+            });
+    });
+
 });

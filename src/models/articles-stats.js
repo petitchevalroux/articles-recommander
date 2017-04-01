@@ -83,7 +83,11 @@ ArticlesStatsModel.prototype.updateDisplay = function() {
 ArticlesStatsModel.prototype.getLeastDisplayIds = function(count) {
     var self = this;
     return new Promise(function(resolve) {
-        di.redis.zrange(self.redisDisplayArticles, 0, count,
+        if (count < 1) {
+            resolve([]);
+            return;
+        }
+        di.redis.zrange(self.redisDisplayArticles, 0, count - 1,
             function(err, result) {
                 if (err) {
                     di.log.error(new di.Error(
