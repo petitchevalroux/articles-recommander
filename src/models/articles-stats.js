@@ -156,4 +156,34 @@ ArticlesStatsModel.prototype.getWriteDisplayStream = function() {
         });
 };
 
+/**
+ * Increment display stats for articles in ids
+ * @param {array} ids
+ * @returns {Promise}
+ */
+ArticlesStatsModel.prototype.incrementDisplayByIds = function(ids) {
+    var self = this;
+    return new Promise(function(resolve, reject) {
+        var cmds = [];
+        ids.forEach(function(id) {
+            cmds.push([
+                "zincrby",
+                self.redisDisplayArticles,
+                1,
+                id
+            ]);
+        });
+        di
+            .redis
+            .multi(cmds)
+            .exec(function(err) {
+                if (err) {
+                    reject(new di.Error(err));
+                    return;
+                }
+                resolve(ids);
+            });
+    });
+};
+
 module.exports = ArticlesStatsModel;
