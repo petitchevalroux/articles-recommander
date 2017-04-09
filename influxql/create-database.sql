@@ -1,0 +1,1 @@
+CREATE DATABASE "articles-recommender" WITH DURATION 30d;
