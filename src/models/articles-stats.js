@@ -7,18 +7,18 @@ var stream = require("stream");
 function ArticlesStatsModel() {}
 
 ArticlesStatsModel.prototype.redisDisplayArticles = "asmdas";
-ArticlesStatsModel.prototype.redisQualityArticles = "asmqas";
+ArticlesStatsModel.prototype.redisEfficiencyArticles = "asmeas";
 
 /**
  * Update statistics
  * @returns {Promise}
  */
 ArticlesStatsModel.prototype.update = function() {
-    return this.updateQualityAndDisplay()
+    return this.updateEfficiencyAndDisplay()
         .then(function(updated) {
             return {
                 "display": updated.display,
-                "quality": updated.quality
+                "efficiency": updated.efficiency
             };
         });
 };
@@ -48,10 +48,10 @@ ArticlesStatsModel.prototype.getDisplayByUrl = function(url) {
  * Update articles display statistics
  * @returns {Promise}
  */
-ArticlesStatsModel.prototype.updateQualityAndDisplay = function() {
+ArticlesStatsModel.prototype.updateEfficiencyAndDisplay = function() {
     var self = this;
     var updated = {
-        "quality": 0,
+        "efficiency": 0,
         "display": 0
     };
     return new Promise(function(resolve) {
@@ -72,11 +72,11 @@ ArticlesStatsModel.prototype.updateQualityAndDisplay = function() {
                         updated.display++;
                         if (article.click > 0 &&
                             article.display > 0) {
-                            updated.quality++;
+                            updated.efficiency++;
                             promises
                                 .push(
                                     self
-                                    .setQuality(
+                                    .setEfficiency(
                                         article.id,
                                         article.click /
                                         article.display
@@ -299,23 +299,23 @@ ArticlesStatsModel.prototype.getAddClickStream = function() {
 };
 
 /**
- * Set qualitiy statistic for an article
+ * Set Efficiency statistic for an article
  * @param {string} id
  * @param {number} score
  * @returns {Promise}
  */
-ArticlesStatsModel.prototype.setQuality = function(id, score) {
+ArticlesStatsModel.prototype.setEfficiency = function(id, score) {
     var self = this;
     return new Promise(function(resolve, reject) {
         // We use all possibile range for score before rounding to keep a good
-        // precision when comparing quality
+        // precision when comparing efficiency
         score = Math.round(score * 100000000000000);
         if (score < 1) {
             resolve();
             return;
         }
         di.redis.zadd(
-            self.redisQualityArticles,
+            self.redisEfficiencyArticles,
             score,
             id,
             function(err) {

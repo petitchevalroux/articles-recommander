@@ -23,7 +23,7 @@ describe("Articles Stats model", function() {
         });
     });
 
-    describe("updateQualityAndDisplay", function() {
+    describe("updateEfficiencyAndDisplay", function() {
         var findStream;
         beforeEach(function() {
             findStream = new stream.Readable({
@@ -70,7 +70,7 @@ describe("Articles Stats model", function() {
 
         it("Should update at least one display statistics",
             function(done) {
-                model.updateQualityAndDisplay()
+                model.updateEfficiencyAndDisplay()
                     .then(function(result) {
                         assert.equal(result.display, 1);
                         done();
@@ -84,11 +84,12 @@ describe("Articles Stats model", function() {
                     });
             });
 
-        it("Should update at least one quality statistics",
+        it("Should update at least one efficiency statistics",
             function(done) {
-                model.updateQualityAndDisplay()
+                model.updateEfficiencyAndDisplay()
                     .then(function(result) {
-                        assert.equal(result.quality, 1);
+                        assert.equal(result.efficiency,
+                            1);
                         done();
                         return result;
                     })
