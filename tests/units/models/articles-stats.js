@@ -148,4 +148,136 @@ describe("Articles Stats model", function() {
             });
     });
 
+    describe("getDisplayCard", function() {
+        var zcardStub;
+        it("Should return display cardinality", function(done) {
+            zcardStub = sinon.stub(di.redis, "zcard",
+                function(set, cb) {
+                    cb(null, 10);
+                });
+            toRestore.push(zcardStub);
+            model
+                .getDisplayCard()
+                .then(function(card) {
+                    assert.equal(card, 10);
+                    done();
+                    return card;
+                })
+                .catch(function(err) {
+                    throw err;
+                });
+        });
+    });
+
+    describe("getDisplayMedian", function() {
+        describe("odd cardinality", function() {
+            var zcardStub, zrangeStub;
+            beforeEach(function() {
+                zcardStub = sinon.stub(di.redis,
+                    "zcard",
+                    function(opts, cb) {
+                        cb(null, 7);
+                    });
+                zrangeStub = sinon.stub(di.redis,
+                    "zrange",
+                    function(opts, cb) {
+                        cb(null, [1, 55]);
+                    });
+                toRestore.push(zcardStub,
+                    zrangeStub);
+            });
+            it("Should return median cardinality",
+                function(done) {
+                    model.getDisplayMedian()
+                        .then(function(median) {
+                            assert.equal(
+                                median,
+                                55
+                            );
+                            done();
+                            return median;
+                        })
+                        .catch(function(err) {
+                            throw err;
+                        });
+                });
+            it("Should call zrange with the good range",
+                function(done) {
+                    model.getDisplayMedian()
+                        .then(function() {
+                            assert.equal(
+                                zrangeStub.getCall(
+                                    0)
+                                .args[0][1],
+                                3);
+                            assert.equal(
+                                zrangeStub.getCall(
+                                    0)
+                                .args[0][2],
+                                3);
+                            done();
+                            return null;
+                        })
+                        .catch(function(err) {
+                            throw err;
+                        });
+                });
+
+        });
+        describe("even cardinality", function() {
+            var zcardStub, zrangeStub;
+            beforeEach(function() {
+                zcardStub = sinon.stub(di.redis,
+                    "zcard",
+                    function(opts, cb) {
+                        cb(null, 8);
+                    });
+                zrangeStub = sinon.stub(di.redis,
+                    "zrange",
+                    function(opts, cb) {
+                        cb(null, [1, 55, 2,
+                            97
+                        ]);
+                    });
+                toRestore.push(zcardStub,
+                    zrangeStub);
+            });
+            it("Should return median cardinality",
+                function(done) {
+                    model.getDisplayMedian()
+                        .then(function(median) {
+                            assert.equal(
+                                median,
+                                76
+                            );
+                            done();
+                            return median;
+                        })
+                        .catch(function(err) {
+                            throw err;
+                        });
+                });
+            it("Should call zrange with the good range",
+                function(done) {
+                    model.getDisplayMedian()
+                        .then(function(median) {
+                            assert.equal(
+                                zrangeStub.getCall(
+                                    0)
+                                .args[0][1],
+                                3);
+                            assert.equal(
+                                zrangeStub.getCall(
+                                    0)
+                                .args[0][2],
+                                4);
+                            done();
+                            return median;
+                        })
+                        .catch(function(err) {
+                            throw err;
+                        });
+                });
+        });
+    });
 });

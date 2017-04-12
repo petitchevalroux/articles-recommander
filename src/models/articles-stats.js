@@ -326,4 +326,90 @@ ArticlesStatsModel.prototype.setEfficiency = function(id, score) {
             });
     });
 };
+
+
+/**
+ * Return display statistics cardinality
+ * @returns {Promise}
+ */
+ArticlesStatsModel.prototype.getDisplayCard = function() {
+    var self = this;
+    return new Promise(function(resolve, reject) {
+        di.redis.zcard(
+            self.redisDisplayArticles,
+            function(err, card) {
+                if (err) {
+                    reject(new di.Error(err));
+                    return;
+                }
+                resolve(card);
+            }
+        );
+    });
+};
+
+/**
+ * Return display statistics median value
+ * @returns {Promise}
+ */
+ArticlesStatsModel.prototype.getDisplayMedian = function() {
+    var self = this;
+    return self
+        .getDisplayCard()
+        .then(function(card) {
+            var middle = card / 2;
+            var range;
+            if ((card % 2)) {
+                var index = Math.floor(middle);
+                range = {
+                    "start": index,
+                    "end": index
+                };
+            } else {
+                range = {
+                    "start": middle - 1,
+                    "end": middle
+                };
+            }
+            return range;
+        })
+        .then(function(range) {
+            return new Promise(function(resolve, reject) {
+                var opts = [
+                    self.redisDisplayArticles,
+                    range.start,
+                    range.end,
+                    "WITHSCORES"
+                ];
+                di
+                    .redis
+                    .zrange(opts,
+                        function(err, response) {
+                            if (err) {
+                                reject(new di.Error(err));
+                                return;
+                            }
+                            //even
+                            if (range.start !== range.end) {
+                                if (response.length !== 4) {
+                                    reject(new di.Error(
+                                        "invalid response when getting median : %j",
+                                        response));
+                                }
+                                resolve((parseFloat(response[1]) +
+                                    parseFloat(response[
+                                        3])) / 2);
+                            } else {
+                                if (response.length !== 2) {
+                                    reject(new di.Error(
+                                        "invalid response when getting median : %j",
+                                        response));
+                                }
+                                resolve(parseFloat(response[1]));
+                            }
+                        });
+            });
+        });
+};
+
 module.exports = ArticlesStatsModel;
