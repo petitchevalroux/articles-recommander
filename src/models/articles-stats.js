@@ -61,7 +61,11 @@ ArticlesStatsModel.prototype.updateDisplay = function() {
                     .on("data", function() {
                         updated++;
                     })
-                    .pipe(self.getWriteDisplayStream())
+                    .pipe(self.getUpdateStream(function(article) {
+                        return self
+                            .setDisplay(article.id,
+                                article.display);
+                    }))
                     .on("finish", function() {
                         lock.unlock();
                         resolve(updated);
@@ -103,25 +107,22 @@ ArticlesStatsModel.prototype.getLeastDisplayIds = function(count) {
 };
 
 /**
- * Return a stream adding score to article
+ * Return a stream adding a value to article
  * @returns {Stream}
  */
-ArticlesStatsModel.prototype.getAddDisplayStream = function() {
-    var self = this;
+ArticlesStatsModel.prototype.getAddStatStream = function(getStat) {
     return new stream
         .Transform({
             "writableObjectMode": true,
             "readableObjectMode": true,
             "transform": function(article, encoding, callback) {
-                self.getDisplayByUrl(article.url)
-                    .then(function(score) {
-                        article.display = score;
+                getStat(article)
+                    .then(function(article) {
                         callback(null, article);
-                        return score;
+                        return article;
                     })
                     .catch(function(err) {
                         di.log.error(new di.Error(err));
-                        article.score = 0;
                         callback(null, article);
                     });
             }
@@ -132,19 +133,40 @@ ArticlesStatsModel.prototype.getAddDisplayStream = function() {
 };
 
 /**
- * Return a stream writing article score
+ * Return a stream adding display value to article
  * @returns {Stream}
  */
-ArticlesStatsModel.prototype.getWriteDisplayStream = function() {
+ArticlesStatsModel.prototype.getAddDisplayStream = function() {
     var self = this;
+    return self.getAddStatStream(function(article) {
+        return new Promise(function(resolve) {
+            self.getDisplayByUrl(article.url)
+                .then(function(display) {
+                    article.display = display;
+                    resolve(article);
+                    return article;
+                })
+                .catch(function(err) {
+                    di.log.error(new di.Error(err));
+                    resolve(article);
+                });
+        });
+    });
+};
+
+/**
+ * Return a stream writing updating an article
+ * @param {Callable} update
+ * @returns {Stream}
+ */
+ArticlesStatsModel.prototype.getUpdateStream = function(update) {
 
     return new stream
         .Writable({
             "objectMode": true,
             "write": function(article, encoding, callback) {
                 var s = this;
-                self
-                    .setDisplay(article.id, article.display)
+                update(article)
                     .then(function() {
                         callback();
                         return article;
