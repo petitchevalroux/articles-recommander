@@ -126,6 +126,34 @@ ArticlesStatsModel.prototype.getLeastDisplayIds = function(count) {
 };
 
 /**
+ * Return count least displayed ids of articles
+ * @param {Integer} count
+ * @returns {Promise}
+ */
+ArticlesStatsModel.prototype.getMostEfficientIds = function(count) {
+    var self = this;
+    return new Promise(function(resolve) {
+        if (count < 1) {
+            resolve([]);
+            return;
+        }
+        di.redis.zrevrange(self.redisEfficiencyArticles, 0, count -
+            1,
+            function(err, result) {
+                if (err) {
+                    di.log.error(new di.Error(
+                        "Unable to fetch most efficient ids from redis",
+                        err
+                    ));
+                    result = [];
+                }
+                di.log.info("Most efficient ids: %j", result);
+                resolve(result);
+            });
+    });
+};
+
+/**
  * Return a stream adding a value to article
  * @returns {Stream}
  */

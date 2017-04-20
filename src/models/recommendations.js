@@ -15,6 +15,27 @@ RecommendationsModel.prototype.getArticlesIds = function(count) {
         function() {
             return di
                 .articlesStatsModel
+                .getEpsilon()
+                .then(function(epsilon) {
+                    var mode, result, random = Math.random();
+                    if (epsilon < random) {
+                        result = di
+                            .articlesStatsModel
+                            .getMostEfficientIds(count);
+                        mode = "exploit";
+                    } else {
+                        result = [];
+                        mode = "explore";
+                    }
+                    di.log.info(
+                        "RecommendationsModel.getArticlesIds epsilon: %s, random: %s, mode: %s",
+                        epsilon, random, mode);
+                    return result;
+                });
+        },
+        function() {
+            return di
+                .articlesStatsModel
                 .getLeastDisplayIds(count);
         },
         function() {
@@ -26,6 +47,12 @@ RecommendationsModel.prototype.getArticlesIds = function(count) {
     var results = {};
     return new Promise(function(resolve) {
         var nextFetch = function(index) {
+            if (index >= fetches.length) {
+                resolve(
+                    Object.getOwnPropertyNames(results)
+                );
+                return;
+            }
             fetches[index]()
                 .then(function(ids) {
                     ids.forEach(function(id) {
@@ -34,18 +61,12 @@ RecommendationsModel.prototype.getArticlesIds = function(count) {
                             count--;
                         }
                     });
-                    if (count > 0 && index < fetches.length) {
-                        nextFetch(index + 1);
-                    } else {
-                        resolve(
-                            Object.getOwnPropertyNames(
-                                results)
-                        );
-                    }
+                    nextFetch(index + 1);
                     return ids;
                 })
                 .catch(function(error) {
                     di.log.error(new di.Error(error));
+                    nextFetch(index + 1);
                 });
         };
         nextFetch(0);
