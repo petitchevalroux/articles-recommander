@@ -355,124 +355,47 @@ ArticlesStatsModel.prototype.setEfficiency = function(id, score) {
     });
 };
 
-
-/**
- * Return display statistics cardinality
- * @returns {Promise}
- */
-ArticlesStatsModel.prototype.getDisplayCard = function() {
-    var self = this;
-    return new Promise(function(resolve, reject) {
-        di.redis.zcard(
-            self.redisDisplayArticles,
-            function(err, card) {
-                if (err) {
-                    reject(new di.Error(err));
-                    return;
-                }
-                resolve(card);
-            }
-        );
-    });
-};
-
-/**
- * Return average from 0 to end
- * @param {string} zset
- * @param {string} end
- * @param {string} step
- * @returns {Promise}
- */
-ArticlesStatsModel.prototype.getAverageUntil = function(zset, end, step = 100) {
-    return new Promise(function(resolve, reject) {
-        var sum = 0;
-        var count = 0;
-        var loop = function(start) {
-            var stop = Math.min(start + (step - 1), end - 1);
-            di.redis.zrange(
-                zset,
-                start,
-                stop,
-                "WITHSCORES",
-                function(err, result) {
-                    if (err) {
-                        reject(new di.Error(err));
-                        return;
-                    }
-                    result.forEach(function(val, index) {
-                        if (index % 2) {
-                            sum += parseFloat(val);
-                            count++;
-                        }
-                    });
-                    start += step;
-                    if (result.length === (step * 2) &&
-                        start < end) {
-                        loop(start);
-                    } else {
-                        resolve(sum / count);
-                    }
-                });
-        };
-        loop(0);
-    });
-};
-
-/**
- * Return the number of elements having score under max value
- * @param {string} zset
- * @param {string} end
- * @returns {Promise}
- */
-ArticlesStatsModel.prototype.getCountLessThan = function(zset, max) {
-    return new Promise(function(resolve, reject) {
-        di.redis.zcount(zset, 0, "(" + max, function(err, count) {
-            if (err) {
-                reject(err);
-            } else {
-                resolve(count);
-            }
-        });
-    });
-};
-
 /**
  * Return probability to explore
  * @returns {Promise}
  */
 ArticlesStatsModel.prototype.getEpsilon = function() {
     var self = this;
-    return self
-        .getDisplayCard()
-        .then(function(card) {
-            if (card < 1) {
-                throw new di.Error("empty display set");
-            }
-            return Math.floor(card / 2);
-        })
-        .then(function(stop) {
-            return self
-                .getAverageUntil(
-                    self.redisDisplayArticles,
-                    stop
-                )
-                .then(function(average) {
-                    if (!average) {
+    return new Promise(function(resolve) {
+        Promise
+            .all([
+                di.redisStats.zPercentile(self.redisDisplayArticles,
+                    0),
+                di.redisStats.zPercentile(self.redisDisplayArticles,
+                    25),
+                di.redisStats.zPercentile(self.redisDisplayArticles,
+                    50)
+            ])
+            .then(function(results) {
+                var q2Distance = results[2] - results[0],
+                    q1Distance = results[1] - results[0];
+                if (q2Distance <= 0) {
+                    // All values = 0
+                    if (results.reduce(
+                            function(a, b) {
+                                return a + b;
+                            },
+                            0
+                        ) <= 0) {
                         return 1;
                     }
-                    return self
-                        .getCountLessThan(
-                            self.redisDisplayArticles,
-                            average
-                        )
-                        .then(function(count) {
-                            if (!count) {
-                                return 0;
-                            }
-                            return 1 - count / stop;
-                        });
-                });
-        });
+                    return 0;
+                }
+                return q1Distance / q2Distance;
+            })
+            .then(function(epsilon) {
+                resolve(epsilon);
+                return epsilon;
+            })
+            .catch(function() {
+                resolve(1);
+            });
+    });
 };
 
 module.exports = ArticlesStatsModel;

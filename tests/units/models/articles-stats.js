@@ -150,52 +150,15 @@ describe("Articles Stats model", function() {
             });
     });
 
-    describe("getDisplayCard", function() {
-        var zcardStub;
-        it("Should return display cardinality", function(done) {
-            zcardStub = sinon.stub(di.redis, "zcard",
-                function(set, cb) {
-                    cb(null, 10);
-                });
-            toRestore.push(zcardStub);
-            model
-                .getDisplayCard()
-                .then(function(card) {
-                    assert.equal(card, 10);
-                    done();
-                    return card;
-                })
-                .catch(function(err) {
-                    throw err;
-                });
-        });
-    });
-
-
-
     describe("getEpsilon", function() {
         it("return a 0 epsilon if all set have the same value",
             function(done) {
                 toRestore
                     .push(
-                        sinon.stub(di.redis, "zcard",
-                            function(a, cb) {
-                                cb(false, 10);
-                            }
-                        ),
-                        sinon.stub(di.redis, "zcount",
-                            function(set, min, max, cb) {
-                                cb(false, 0);
-                            }
-                        ),
-                        sinon.stub(di.redis, "zrange",
-                            function(a, start, stop, b, cb) {
-                                cb(false, [0, 2, 1, 2, 2, 2,
-                                    3, 2, 4, 2, 5,
-                                    2, 6, 2, 7, 2,
-                                    8, 2, 9, 2
-                                ].slice(start, stop +
-                                    1));
+                        sinon.stub(di.redisStats,
+                            "zPercentile",
+                            function() {
+                                return Promise.resolve(10);
                             }
                         )
                     );
@@ -214,23 +177,17 @@ describe("Articles Stats model", function() {
         it("return a 0.5 epsilon", function(done) {
             toRestore
                 .push(
-                    sinon.stub(di.redis, "zcard",
-                        function(a, cb) {
-                            cb(false, 8);
-                        }
-                    ),
-                    sinon.stub(di.redis, "zcount",
-                        function(set, min, max, cb) {
-                            cb(false, 2);
-                        }
-                    ),
-                    sinon.stub(di.redis, "zrange",
-                        function(a, b, c, d, cb) {
-                            cb(false, [0, 1, 1, 2, 2, 7,
-                                3, 7, 4, 9, 5,
-                                10, 6, 10, 7,
-                                10
-                            ]);
+                    sinon.stub(di.redisStats,
+                        "zPercentile",
+                        function(set, percentile) {
+                            if (percentile === 25) {
+                                return 10;
+                            } else if (percentile ===
+                                50) {
+                                return 20;
+                            } else {
+                                return 0;
+                            }
                         }
                     )
                 );
@@ -249,24 +206,17 @@ describe("Articles Stats model", function() {
         it("return a 0.75 epsilon", function(done) {
             toRestore
                 .push(
-                    sinon.stub(di.redis, "zcard",
-                        function(a, cb) {
-                            cb(false, 8);
-                        }
-                    ),
-                    sinon.stub(di.redis, "zcount",
-                        function(set, min, max, cb) {
-                            cb(false, 1);
-                        }
-                    ),
-                    sinon.stub(di.redis, "zrange",
-                        function(a, start, stop, b, cb) {
-                            cb(false, [0, 0, 1, 3, 2, 2,
-                                3, 2, 4, 9, 5,
-                                10, 6, 10, 7,
-                                10
-                            ].slice(start, stop +
-                                1));
+                    sinon.stub(di.redisStats,
+                        "zPercentile",
+                        function(set, percentile) {
+                            if (percentile === 25) {
+                                return 15;
+                            } else if (percentile ===
+                                50) {
+                                return 20;
+                            } else {
+                                return 0;
+                            }
                         }
                     )
                 );
@@ -286,18 +236,10 @@ describe("Articles Stats model", function() {
             done) {
             toRestore
                 .push(
-                    sinon.stub(di.redis, "zcard",
-                        function(a, cb) {
-                            cb(false, 8);
-                        }
-                    ),
-                    sinon.stub(di.redis, "zrange",
-                        function(a, start, stop, b, cb) {
-                            cb(false, [0, 0, 1, 0, 2, 0,
-                                3, 0, 4, 0, 5,
-                                0, 6, 0, 7, 0
-                            ].slice(start, stop +
-                                1));
+                    sinon.stub(di.redisStats,
+                        "zPercentile",
+                        function() {
+                            return 0;
                         }
                     )
                 );
