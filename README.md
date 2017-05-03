@@ -13,3 +13,15 @@ docker run -p 6379:6379 --name redis -d redis
 ```
 docker run -p 8083:8083 -p 8086:8086 --name influxdb -d influxdb
 ```
+
+## Build in production
+
+```bash
+ENV=production make
+```
+
+## Run widget server in production
+
+```bash
+NODE_ENV=production node /home/node/articles-recommander/src/servers/widget.js
+```
