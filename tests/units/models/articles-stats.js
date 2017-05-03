@@ -10,8 +10,10 @@ var toRestore = [];
 
 describe("Articles Stats model", function() {
     before(function() {
+
         di.redis = require(path.join(__dirname, "..", "..",
             "mocks", "redis"));
+
     });
     after(function() {
         delete di.redis;
@@ -169,115 +171,150 @@ describe("Articles Stats model", function() {
         });
     });
 
-    describe("getDisplayMedian", function() {
-        describe("odd cardinality", function() {
-            var zcardStub, zrangeStub;
-            beforeEach(function() {
-                zcardStub = sinon.stub(di.redis,
-                    "zcard",
-                    function(opts, cb) {
-                        cb(null, 7);
-                    });
-                zrangeStub = sinon.stub(di.redis,
-                    "zrange",
-                    function(opts, cb) {
-                        cb(null, [1, 55]);
-                    });
-                toRestore.push(zcardStub,
-                    zrangeStub);
-            });
-            it("Should return median cardinality",
-                function(done) {
-                    model.getDisplayMedian()
-                        .then(function(median) {
-                            assert.equal(
-                                median,
-                                55
-                            );
-                            done();
-                            return median;
-                        })
-                        .catch(function(err) {
-                            throw err;
-                        });
-                });
-            it("Should call zrange with the good range",
-                function(done) {
-                    model.getDisplayMedian()
-                        .then(function() {
-                            assert.equal(
-                                zrangeStub.getCall(
-                                    0)
-                                .args[0][1],
-                                3);
-                            assert.equal(
-                                zrangeStub.getCall(
-                                    0)
-                                .args[0][2],
-                                3);
-                            done();
-                            return null;
-                        })
-                        .catch(function(err) {
-                            throw err;
-                        });
-                });
 
-        });
-        describe("even cardinality", function() {
-            var zcardStub, zrangeStub;
-            beforeEach(function() {
-                zcardStub = sinon.stub(di.redis,
-                    "zcard",
-                    function(opts, cb) {
-                        cb(null, 8);
+
+    describe("getEpsilon", function() {
+        it("return a 0 epsilon if all set have the same value",
+            function(done) {
+                toRestore
+                    .push(
+                        sinon.stub(di.redis, "zcard",
+                            function(a, cb) {
+                                cb(false, 10);
+                            }
+                        ),
+                        sinon.stub(di.redis, "zcount",
+                            function(set, min, max, cb) {
+                                cb(false, 0);
+                            }
+                        ),
+                        sinon.stub(di.redis, "zrange",
+                            function(a, start, stop, b, cb) {
+                                cb(false, [0, 2, 1, 2, 2, 2,
+                                    3, 2, 4, 2, 5,
+                                    2, 6, 2, 7, 2,
+                                    8, 2, 9, 2
+                                ].slice(start, stop +
+                                    1));
+                            }
+                        )
+                    );
+                model
+                    .getEpsilon()
+                    .then(function(epsilon) {
+                        assert.equal(epsilon, 0);
+                        done();
+                        return epsilon;
+                    })
+                    .catch(function(err) {
+                        throw err;
                     });
-                zrangeStub = sinon.stub(di.redis,
-                    "zrange",
-                    function(opts, cb) {
-                        cb(null, [1, 55, 2,
-                            97
-                        ]);
-                    });
-                toRestore.push(zcardStub,
-                    zrangeStub);
             });
-            it("Should return median cardinality",
-                function(done) {
-                    model.getDisplayMedian()
-                        .then(function(median) {
-                            assert.equal(
-                                median,
-                                76
-                            );
-                            done();
-                            return median;
-                        })
-                        .catch(function(err) {
-                            throw err;
-                        });
+
+        it("return a 0.5 epsilon", function(done) {
+            toRestore
+                .push(
+                    sinon.stub(di.redis, "zcard",
+                        function(a, cb) {
+                            cb(false, 8);
+                        }
+                    ),
+                    sinon.stub(di.redis, "zcount",
+                        function(set, min, max, cb) {
+                            cb(false, 2);
+                        }
+                    ),
+                    sinon.stub(di.redis, "zrange",
+                        function(a, b, c, d, cb) {
+                            cb(false, [0, 1, 1, 2, 2, 7,
+                                3, 7, 4, 9, 5,
+                                10, 6, 10, 7,
+                                10
+                            ]);
+                        }
+                    )
+                );
+            model
+                .getEpsilon()
+                .then(function(epsilon) {
+                    assert.equal(epsilon, 0.5);
+                    done();
+                    return epsilon;
+                })
+                .catch(function(err) {
+                    throw err;
                 });
-            it("Should call zrange with the good range",
-                function(done) {
-                    model.getDisplayMedian()
-                        .then(function(median) {
-                            assert.equal(
-                                zrangeStub.getCall(
-                                    0)
-                                .args[0][1],
-                                3);
-                            assert.equal(
-                                zrangeStub.getCall(
-                                    0)
-                                .args[0][2],
-                                4);
-                            done();
-                            return median;
-                        })
-                        .catch(function(err) {
-                            throw err;
-                        });
+        });
+
+        it("return a 0.75 epsilon", function(done) {
+            toRestore
+                .push(
+                    sinon.stub(di.redis, "zcard",
+                        function(a, cb) {
+                            cb(false, 8);
+                        }
+                    ),
+                    sinon.stub(di.redis, "zcount",
+                        function(set, min, max, cb) {
+                            cb(false, 1);
+                        }
+                    ),
+                    sinon.stub(di.redis, "zrange",
+                        function(a, start, stop, b, cb) {
+                            cb(false, [0, 0, 1, 3, 2, 2,
+                                3, 2, 4, 9, 5,
+                                10, 6, 10, 7,
+                                10
+                            ].slice(start, stop +
+                                1));
+                        }
+                    )
+                );
+            model
+                .getEpsilon()
+                .then(function(epsilon) {
+                    assert.equal(epsilon, 0.75);
+                    done();
+                    return epsilon;
+                })
+                .catch(function(err) {
+                    throw err;
+                });
+        });
+
+        it("return a 1 epsilon if all values are 0", function(
+            done) {
+            toRestore
+                .push(
+                    sinon.stub(di.redis, "zcard",
+                        function(a, cb) {
+                            cb(false, 8);
+                        }
+                    ),
+                    sinon.stub(di.redis, "zrange",
+                        function(a, start, stop, b, cb) {
+                            cb(false, [0, 0, 1, 0, 2, 0,
+                                3, 0, 4, 0, 5,
+                                0, 6, 0, 7, 0
+                            ].slice(start, stop +
+                                1));
+                        }
+                    )
+                );
+            model
+                .getEpsilon()
+                .then(function(epsilon) {
+                    assert.equal(epsilon, 1);
+                    done();
+                    return epsilon;
+                })
+                .catch(function(err) {
+                    throw err;
                 });
         });
     });
+
+
+
+
 });

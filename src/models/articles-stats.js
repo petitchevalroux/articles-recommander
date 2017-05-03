@@ -349,66 +349,101 @@ ArticlesStatsModel.prototype.getDisplayCard = function() {
 };
 
 /**
- * Return display statistics median value
+ * Return average from 0 to end
+ * @param {string} zset
+ * @param {string} end
+ * @param {string} step
  * @returns {Promise}
  */
-ArticlesStatsModel.prototype.getDisplayMedian = function() {
+ArticlesStatsModel.prototype.getAverageUntil = function(zset, end, step = 100) {
+    return new Promise(function(resolve, reject) {
+        var sum = 0;
+        var count = 0;
+        var loop = function(start) {
+            var stop = Math.min(start + (step - 1), end - 1);
+            di.redis.zrange(
+                zset,
+                start,
+                stop,
+                "WITHSCORES",
+                function(err, result) {
+                    if (err) {
+                        reject(new di.Error(err));
+                        return;
+                    }
+                    result.forEach(function(val, index) {
+                        if (index % 2) {
+                            sum += parseFloat(val);
+                            count++;
+                        }
+                    });
+                    start += step;
+                    if (result.length === (step * 2) &&
+                        start < end) {
+                        loop(start);
+                    } else {
+                        resolve(sum / count);
+                    }
+                });
+        };
+        loop(0);
+    });
+};
+
+/**
+ * Return the number of elements having score under max value
+ * @param {string} zset
+ * @param {string} end
+ * @returns {Promise}
+ */
+ArticlesStatsModel.prototype.getCountLessThan = function(zset, max) {
+    return new Promise(function(resolve, reject) {
+        di.redis.zcount(zset, 0, "(" + max, function(err, count) {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(count);
+            }
+        });
+    });
+};
+
+/**
+ * Return probability to explore
+ * @returns {Promise}
+ */
+ArticlesStatsModel.prototype.getEpsilon = function() {
     var self = this;
     return self
         .getDisplayCard()
         .then(function(card) {
-            var middle = card / 2;
-            var range;
-            if ((card % 2)) {
-                var index = Math.floor(middle);
-                range = {
-                    "start": index,
-                    "end": index
-                };
-            } else {
-                range = {
-                    "start": middle - 1,
-                    "end": middle
-                };
+            if (card < 1) {
+                throw new di.Error("empty display set");
             }
-            return range;
+            return Math.floor(card / 2);
         })
-        .then(function(range) {
-            return new Promise(function(resolve, reject) {
-                var opts = [
+        .then(function(stop) {
+            return self
+                .getAverageUntil(
                     self.redisDisplayArticles,
-                    range.start,
-                    range.end,
-                    "WITHSCORES"
-                ];
-                di
-                    .redis
-                    .zrange(opts,
-                        function(err, response) {
-                            if (err) {
-                                reject(new di.Error(err));
-                                return;
+                    stop
+                )
+                .then(function(average) {
+                    if (!average) {
+                        return 1;
+                    }
+                    return self
+                        .getCountLessThan(
+                            self.redisDisplayArticles,
+                            average
+                        )
+                        .then(function(count) {
+                            if (!count) {
+                                return 0;
                             }
-                            //even
-                            if (range.start !== range.end) {
-                                if (response.length !== 4) {
-                                    reject(new di.Error(
-                                        "invalid response when getting median : %j",
-                                        response));
-                                }
-                                resolve((parseFloat(response[1]) +
-                                    parseFloat(response[
-                                        3])) / 2);
-                            } else {
-                                if (response.length !== 2) {
-                                    reject(new di.Error(
-                                        "invalid response when getting median : %j",
-                                        response));
-                                }
-                                resolve(parseFloat(response[1]));
-                            }
+                            return 1 - count / stop;
                         });
-            });
+                });
         });
 };
 
