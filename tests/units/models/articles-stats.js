@@ -23,18 +23,19 @@ describe("Articles Stats model", function() {
         });
     });
 
-    describe("updateDisplay", function() {
-        var findStream = new stream.Readable({
-            "objectMode": true,
-            "read": function() {
-                this.push({
-                    "id": 1,
-                    "url": "http://example.com"
-                });
-                this.push(null);
-            }
-        });
+    describe("updateQualityAndDisplay", function() {
+        var findStream;
         beforeEach(function() {
+            findStream = new stream.Readable({
+                "objectMode": true,
+                "read": function() {
+                    this.push({
+                        "id": 1,
+                        "url": "http://example.com"
+                    });
+                    this.push(null);
+                }
+            });
             di.lock = function() {
                 return new Promise(function(resolve) {
                     resolve({
@@ -55,7 +56,8 @@ describe("Articles Stats model", function() {
                     return new Promise(function(
                         resolve) {
                         resolve([{
-                            "display": 42
+                            "display": 42,
+                            "click": 42
                         }]);
                     });
                 }));
@@ -68,9 +70,25 @@ describe("Articles Stats model", function() {
 
         it("Should update at least one display statistics",
             function(done) {
-                model.updateDisplay()
+                model.updateQualityAndDisplay()
                     .then(function(result) {
-                        assert.equal(result, 1);
+                        assert.equal(result.display, 1);
+                        done();
+                        return result;
+                    })
+                    .catch(function(err) {
+                        throw new di.Error(
+                            "error test",
+                            err
+                        );
+                    });
+            });
+
+        it("Should update at least one quality statistics",
+            function(done) {
+                model.updateQualityAndDisplay()
+                    .then(function(result) {
+                        assert.equal(result.quality, 1);
                         done();
                         return result;
                     })

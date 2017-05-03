@@ -7,16 +7,18 @@ var stream = require("stream");
 function ArticlesStatsModel() {}
 
 ArticlesStatsModel.prototype.redisDisplayArticles = "asmdas";
+ArticlesStatsModel.prototype.redisQualityArticles = "asmqas";
 
 /**
  * Update statistics
  * @returns {Promise}
  */
 ArticlesStatsModel.prototype.update = function() {
-    return this.updateDisplay()
+    return this.updateQualityAndDisplay()
         .then(function(updated) {
             return {
-                "display": updated
+                "display": updated.display,
+                "quality": updated.quality
             };
         });
 };
@@ -46,9 +48,12 @@ ArticlesStatsModel.prototype.getDisplayByUrl = function(url) {
  * Update articles display statistics
  * @returns {Promise}
  */
-ArticlesStatsModel.prototype.updateDisplay = function() {
+ArticlesStatsModel.prototype.updateQualityAndDisplay = function() {
     var self = this;
-    var updated = 0;
+    var updated = {
+        "quality": 0,
+        "display": 0
+    };
     return new Promise(function(resolve) {
         di.lock("lock:" + self.redisDisplayArticles, 3600000)
             .then(function(lock) {
@@ -58,13 +63,27 @@ ArticlesStatsModel.prototype.updateDisplay = function() {
                         di.log.error(new di.Error(err));
                     })
                     .pipe(self.getAddDisplayStream())
-                    .on("data", function() {
-                        updated++;
-                    })
+                    .pipe(self.getAddClickStream())
                     .pipe(self.getUpdateStream(function(article) {
-                        return self
+                        var promises = [self
                             .setDisplay(article.id,
-                                article.display);
+                                article.display)
+                        ];
+                        updated.display++;
+                        if (article.click > 0 &&
+                            article.display > 0) {
+                            updated.quality++;
+                            promises
+                                .push(
+                                    self
+                                    .setQuality(
+                                        article.id,
+                                        article.click /
+                                        article.display
+                                    )
+                                );
+                        }
+                        return Promise.all(promises);
                     }))
                     .on("finish", function() {
                         lock.unlock();
@@ -234,4 +253,77 @@ ArticlesStatsModel.prototype.setDisplay = function(id, score) {
     });
 };
 
+
+/**
+ * Return click count of an article by its url
+ * @param {string} url
+ * @returns {Promise}
+ */
+ArticlesStatsModel.prototype.getClickByUrl = function(url) {
+    return di.eventsDatastore
+        .find("articles", {
+            "filter": {
+                "value": url
+            },
+            "fields": ["sum(click) as click"]
+        })
+        .then(function(results) {
+            if (results.length > 0 && results[0]["click"]) {
+                return results[0]["click"];
+            }
+            return 0;
+        });
+};
+
+/**
+ * Return a stream adding display value to article
+ * @returns {Stream}
+ */
+ArticlesStatsModel.prototype.getAddClickStream = function() {
+    var self = this;
+    return self.getAddStatStream(function(article) {
+        return new Promise(function(resolve) {
+            self.getClickByUrl(article.url)
+                .then(function(display) {
+                    article.click = display;
+                    resolve(article);
+                    return article;
+                })
+                .catch(function(err) {
+                    di.log.error(new di.Error(err));
+                    article.click = 0;
+                    resolve(article);
+                });
+        });
+    });
+};
+
+/**
+ * Set qualitiy statistic for an article
+ * @param {string} id
+ * @param {number} score
+ * @returns {Promise}
+ */
+ArticlesStatsModel.prototype.setQuality = function(id, score) {
+    var self = this;
+    return new Promise(function(resolve, reject) {
+        // We use all possibile range for score before rounding to keep a good
+        // precision when comparing quality
+        score = Math.round(score * 100000000000000);
+        if (score < 1) {
+            resolve();
+            return;
+        }
+        di.redis.zadd(
+            self.redisQualityArticles,
+            score,
+            id,
+            function(err) {
+                if (err) {
+                    reject(err);
+                }
+                resolve();
+            });
+    });
+};
 module.exports = ArticlesStatsModel;
