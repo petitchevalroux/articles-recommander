@@ -10,8 +10,10 @@ var toRestore = [];
 
 describe("Articles Stats model", function() {
     before(function() {
+
         di.redis = require(path.join(__dirname, "..", "..",
             "mocks", "redis"));
+
     });
     after(function() {
         delete di.redis;
@@ -23,18 +25,19 @@ describe("Articles Stats model", function() {
         });
     });
 
-    describe("updateDisplay", function() {
-        var findStream = new stream.Readable({
-            "objectMode": true,
-            "read": function() {
-                this.push({
-                    "id": 1,
-                    "url": "http://example.com"
-                });
-                this.push(null);
-            }
-        });
+    describe("updateEfficiencyAndDisplay", function() {
+        var findStream;
         beforeEach(function() {
+            findStream = new stream.Readable({
+                "objectMode": true,
+                "read": function() {
+                    this.push({
+                        "id": 1,
+                        "url": "http://example.com"
+                    });
+                    this.push(null);
+                }
+            });
             di.lock = function() {
                 return new Promise(function(resolve) {
                     resolve({
@@ -55,7 +58,8 @@ describe("Articles Stats model", function() {
                     return new Promise(function(
                         resolve) {
                         resolve([{
-                            "display": 42
+                            "display": 42,
+                            "click": 42
                         }]);
                     });
                 }));
@@ -68,9 +72,26 @@ describe("Articles Stats model", function() {
 
         it("Should update at least one display statistics",
             function(done) {
-                model.updateDisplay()
+                model.updateEfficiencyAndDisplay()
                     .then(function(result) {
-                        assert.equal(result, 1);
+                        assert.equal(result.display, 1);
+                        done();
+                        return result;
+                    })
+                    .catch(function(err) {
+                        throw new di.Error(
+                            "error test",
+                            err
+                        );
+                    });
+            });
+
+        it("Should update at least one efficiency statistics",
+            function(done) {
+                model.updateEfficiencyAndDisplay()
+                    .then(function(result) {
+                        assert.equal(result.efficiency,
+                            1);
                         done();
                         return result;
                     })
@@ -128,5 +149,114 @@ describe("Articles Stats model", function() {
                     });
             });
     });
+
+    describe("getEpsilon", function() {
+        it("return a 0 epsilon if all set have the same value",
+            function(done) {
+                toRestore
+                    .push(
+                        sinon.stub(di.redisStats,
+                            "zPercentile",
+                            function() {
+                                return Promise.resolve(10);
+                            }
+                        )
+                    );
+                model
+                    .getEpsilon()
+                    .then(function(epsilon) {
+                        assert.equal(epsilon, 0);
+                        done();
+                        return epsilon;
+                    })
+                    .catch(function(err) {
+                        throw err;
+                    });
+            });
+
+        it("return a 0.5 epsilon", function(done) {
+            toRestore
+                .push(
+                    sinon.stub(di.redisStats,
+                        "zPercentile",
+                        function(set, percentile) {
+                            if (percentile === 25) {
+                                return 10;
+                            } else if (percentile ===
+                                50) {
+                                return 20;
+                            } else {
+                                return 0;
+                            }
+                        }
+                    )
+                );
+            model
+                .getEpsilon()
+                .then(function(epsilon) {
+                    assert.equal(epsilon, 0.5);
+                    done();
+                    return epsilon;
+                })
+                .catch(function(err) {
+                    throw err;
+                });
+        });
+
+        it("return a 0.75 epsilon", function(done) {
+            toRestore
+                .push(
+                    sinon.stub(di.redisStats,
+                        "zPercentile",
+                        function(set, percentile) {
+                            if (percentile === 25) {
+                                return 15;
+                            } else if (percentile ===
+                                50) {
+                                return 20;
+                            } else {
+                                return 0;
+                            }
+                        }
+                    )
+                );
+            model
+                .getEpsilon()
+                .then(function(epsilon) {
+                    assert.equal(epsilon, 0.75);
+                    done();
+                    return epsilon;
+                })
+                .catch(function(err) {
+                    throw err;
+                });
+        });
+
+        it("return a 1 epsilon if all values are 0", function(
+            done) {
+            toRestore
+                .push(
+                    sinon.stub(di.redisStats,
+                        "zPercentile",
+                        function() {
+                            return 0;
+                        }
+                    )
+                );
+            model
+                .getEpsilon()
+                .then(function(epsilon) {
+                    assert.equal(epsilon, 1);
+                    done();
+                    return epsilon;
+                })
+                .catch(function(err) {
+                    throw err;
+                });
+        });
+    });
+
+
+
 
 });
