@@ -29,7 +29,8 @@ LogParser.prototype.getEvents = function(log) {
                             events.push({
                                 "date": log.date,
                                 "action": "click",
-                                "value": query.to,
+                                "value": query.to ? query.to
+                                    .toString() : "",
                                 "source": log.referer ? log
                                     .referer.toString() : ""
                             });
@@ -41,16 +42,25 @@ LogParser.prototype.getEvents = function(log) {
                             query.e.forEach(function(e) {
                                 events.push({
                                     "date": log.date,
-                                    "action": e.action,
-                                    "value": e.value,
-                                    "source": e.label
+                                    "action": e.action ?
+                                        e.action.toString() :
+                                        "",
+                                    "value": e.value ?
+                                        e.value.toString() :
+                                        "",
+                                    "source": e.label ?
+                                        e.label.toString() :
+                                        ""
                                 });
                             });
                         }
                     }
                 }
             }
-            resolve(events);
+            resolve(events.filter(e => {
+                return e.date && e.action && e.value &&
+                    e.source;
+            }));
         } catch (err) {
             reject(err);
         }
